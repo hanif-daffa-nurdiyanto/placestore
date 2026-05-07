@@ -20,7 +20,6 @@ import { Route as ShopNewRouteImport } from './routes/shop/new'
 import { Route as ShopAdminRouteImport } from './routes/shop/_admin'
 import { Route as ShopSlugRouteImport } from './routes/shop/$slug'
 import { Route as ProductIdRouteImport } from './routes/product/$id'
-import { Route as CategorySlugRouteImport } from './routes/category/$slug'
 import { Route as AdminAdminLayoutRouteImport } from './routes/admin/_adminLayout'
 import { Route as UserAccountProfileRouteImport } from './routes/user/account/profile'
 import { Route as ShopAdminAdminLayoutRouteImport } from './routes/shop/_admin/_adminLayout'
@@ -89,11 +88,6 @@ const ShopSlugRoute = ShopSlugRouteImport.update({
 const ProductIdRoute = ProductIdRouteImport.update({
   id: '/product/$id',
   path: '/product/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CategorySlugRoute = CategorySlugRouteImport.update({
-  id: '/category/$slug',
-  path: '/category/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAdminLayoutRoute = AdminAdminLayoutRouteImport.update({
@@ -184,7 +178,6 @@ export interface FileRoutesByFullPath {
   '/explore': typeof ExploreRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop': typeof ShopAdminAdminLayoutRouteWithChildren
@@ -210,7 +203,6 @@ export interface FileRoutesByTo {
   '/explore': typeof ExploreRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
-  '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop': typeof ShopAdminAdminLayoutRouteWithChildren
@@ -238,7 +230,6 @@ export interface FileRoutesById {
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/admin/_adminLayout': typeof AdminAdminLayoutRouteWithChildren
-  '/category/$slug': typeof CategorySlugRoute
   '/product/$id': typeof ProductIdRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop/_admin': typeof ShopAdminRouteWithChildren
@@ -267,7 +258,6 @@ export interface FileRouteTypes {
     | '/explore'
     | '/sign-in'
     | '/sign-up'
-    | '/category/$slug'
     | '/product/$id'
     | '/shop/$slug'
     | '/shop'
@@ -293,7 +283,6 @@ export interface FileRouteTypes {
     | '/explore'
     | '/sign-in'
     | '/sign-up'
-    | '/category/$slug'
     | '/product/$id'
     | '/shop/$slug'
     | '/shop'
@@ -320,7 +309,6 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/admin/_adminLayout'
-    | '/category/$slug'
     | '/product/$id'
     | '/shop/$slug'
     | '/shop/_admin'
@@ -348,7 +336,6 @@ export interface RootRouteChildren {
   ExploreRoute: typeof ExploreRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
-  CategorySlugRoute: typeof CategorySlugRoute
   ProductIdRoute: typeof ProductIdRoute
   ShopSlugRoute: typeof ShopSlugRoute
   ShopAdminRoute: typeof ShopAdminRouteWithChildren
@@ -433,13 +420,6 @@ declare module '@tanstack/react-router' {
       path: '/product/$id'
       fullPath: '/product/$id'
       preLoaderRoute: typeof ProductIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/category/$slug': {
-      id: '/category/$slug'
-      path: '/category/$slug'
-      fullPath: '/category/$slug'
-      preLoaderRoute: typeof CategorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/_adminLayout': {
@@ -621,7 +601,6 @@ const rootRouteChildren: RootRouteChildren = {
   ExploreRoute: ExploreRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
-  CategorySlugRoute: CategorySlugRoute,
   ProductIdRoute: ProductIdRoute,
   ShopSlugRoute: ShopSlugRoute,
   ShopAdminRoute: ShopAdminRouteWithChildren,

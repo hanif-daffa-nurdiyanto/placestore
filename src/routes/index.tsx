@@ -74,8 +74,7 @@ function Home() {
 							{categories.map((category) => (
 								<div key={category._id} className="text-center cursor-pointer">
 									<Link
-										to={`/category/$slug`}
-										params={{ slug: category.slug }}
+										to="/explore" search={{ categoryId: category._id }}
 										className="aspect-square rounded-2xl border bg-slate-50 overflow-hidden flex items-center justify-center"
 									>
 										{category.imageUrl ? (
