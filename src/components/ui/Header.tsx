@@ -1,6 +1,6 @@
 import { Show, UserButton } from "@clerk/tanstack-react-start";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ShoppingCart, Store, Truck } from "lucide-react";
+import { Search, ShoppingCart, Store, Truck } from "lucide-react";
 import { useState } from "react";
 import { useCart } from "#/lib/cart";
 
@@ -9,14 +9,14 @@ export const Header = () => {
 	const navigate = useNavigate();
 	const [q, setQ] = useState("");
 	return (
-		<header className="flex">
+		<header className="flex flex-col">
 			<div className="container mx-auto flex justify-between items-center py-6">
 				<Link to="/">
 					<h1 className="text-xl font-semibold">Place Store</h1>
 				</Link>
 
 				<form
-					className="hidden md:flex items-center gap-2 w-full max-w-md px-4"
+					className="hidden md:flex items-center gap-2 w-full max-w-xl px-4"
 					onSubmit={(e) => {
 						e.preventDefault();
 						const query = q.trim();
@@ -29,14 +29,14 @@ export const Header = () => {
 					<input
 						value={q}
 						onChange={(e) => setQ(e.target.value)}
-						className="w-full rounded-xl border px-4 py-2 text-sm"
+						className="w-full rounded-l-xl border px-4 py-2 text-sm"
 						placeholder="Search products…"
 					/>
 					<button
 						type="submit"
-						className="rounded-xl bg-black px-4 py-2 text-sm text-white"
+						className="cursor-pointer rounded-r-xl bg-black px-4 py-2 text-sm text-white"
 					>
-						Search
+						<Search />
 					</button>
 				</form>
 
@@ -84,6 +84,30 @@ export const Header = () => {
 					</Show>
 				</div>
 			</div>
+			<form
+					className="flex md:hidden items-center gap-2 w-full px-8 mb-4"
+					onSubmit={(e) => {
+						e.preventDefault();
+						const query = q.trim();
+						void navigate({
+							to: "/explore",
+							search: query ? { q: query } : {},
+						});
+					}}
+				>
+					<input
+						value={q}
+						onChange={(e) => setQ(e.target.value)}
+						className="w-full rounded-l-xl border px-4 py-2 text-sm"
+						placeholder="Search products…"
+					/>
+					<button
+						type="submit"
+						className="cursor-pointer rounded-r-xl bg-black px-4 py-2 text-sm text-white"
+					>
+						<Search />
+					</button>
+				</form>
 		</header>
 	);
 };
