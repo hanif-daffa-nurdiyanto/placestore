@@ -50,7 +50,7 @@ const ProductsHome = ({
 					{products.length === 0 ? (
 						<p className="text-sm text-slate-500">No products yet.</p>
 					) : (
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 justify-center">
+						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 justify-center">
 							{merged.map((product) => (
 								<ProductCard key={product._id} product={product} />
 							))}
@@ -67,7 +67,7 @@ const ProductsHome = ({
 					{products.length === 0 ? (
 						<p className="text-sm text-slate-500">No products yet.</p>
 					) : (
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 justify-center">
+						<div className="grid grid-cols-1 sm:grid-cols-2  md:grid-cols-4 lg:grid-cols-6 gap-4 justify-center">
 							{merged.map((product) => (
 								<ProductCard key={product._id} product={product} />
 							))}

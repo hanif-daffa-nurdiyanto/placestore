@@ -13,14 +13,14 @@ const ProductCard = ({ product }: { product: PublicProduct }) => {
 		<Link
 			to={`/product/$id`}
 			params={{ id: product._id }}
-			className="group cursor-pointer rounded-2xl border py-2 transition-shadow duration-200 hover:shadow-lg"
+			className="border rounded-2xl py-2 cursor-pointer"
 		>
 			<div className="flex flex-col items-end">
 				<div className="w-12 h-12  rounded-md mr-2"></div>
 				{product.imageUrl ? (
 					<img
 						src={product.imageUrl}
-						className="aspect-square w-full mb-8 object-cover transition-transform duration-200 group-hover:scale-95"
+						className="aspect-square w-full mb-8  object-cover"
 						loading="lazy"
 						alt={product.name}
 					/>
@@ -31,13 +31,13 @@ const ProductCard = ({ product }: { product: PublicProduct }) => {
 				)}
 			</div>
 			<div className="flex flex-col items-center px-4">
-				<p className="w-full text-center font-semibold text-sm">
+				<p className="w-full text-center font-semibold text-sm truncate">
 					{product.name}
 				</p>
 				<p className="border-b w-full text-center font-semibold text-xs pb-3 truncate">
 					{product.description}
 				</p>
-				<span className="font-bold text-center my-4 text-xl">
+				<span className="font-bold text-center my-4 text-md">
 					{formatIDRMaybe(product.basePrice)}
 				</span>
 			</div>

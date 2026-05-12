@@ -1,3 +1,5 @@
+/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
+/** biome-ignore-all lint/a11y/useButtonType: <explanation> */
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
@@ -6,9 +8,10 @@ import {
 	useRouteContext,
 } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
-import { useEffect, useMemo, useState } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import { ChevronDown, ChevronUp, ShoppingCart, Star } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import EmblaImageCarousel from "#/components/ui/embla/EmblaImageCarousel";
 import { Header } from "#/components/ui/Header";
 import { useCart } from "#/lib/cart";
 import { saveCheckoutSelection } from "#/lib/checkoutSelection";
@@ -57,11 +60,13 @@ function skuKey(options: { name: string; value: string }[]) {
 	return options.map((o) => `${o.name}=${o.value}`).join("|");
 }
 
-	function RouteComponent() {
-		const { productId } = Route.useLoaderData();
-		const { convexQueryClient } = useRouteContext({ from: Route.id });
-		const reviewSummary = useQuery(api.reviews.getProductSummary, { productId });
-		const reviews = useQuery(api.reviews.listByProduct, { productId, limit: 10 });
+function RouteComponent() {
+	const { productId } = Route.useLoaderData();
+	const { convexQueryClient } = useRouteContext({ from: Route.id });
+	const reviewSummary = useQuery(api.reviews.getProductSummary, { productId });
+	const reviews = useQuery(api.reviews.listByProduct, { productId, limit: 10 });
+
+	const [isDetailOpen, setIsDetailOpen] = useState(false);
 
 	const productQuery = convexQueryClient.queryOptions(
 		api.products.getPublicById,
@@ -98,69 +103,81 @@ function skuKey(options: { name: string; value: string }[]) {
 	const skus = ((product.skus as PublicSku[] | undefined) ??
 		[]) satisfies PublicSku[];
 
-			return (
-				<>
-					<Header />
+	return (
+		<>
+			<Header />
 
-					<div className="container mx-auto px-4 py-8">
-						<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-							<section className="space-y-4 lg:col-span-5">
-								<div className="rounded-2xl border bg-white overflow-hidden">
-									{product.imageUrls?.filter(
-										(u): u is string => typeof u === "string" && u.length > 0,
-									).length ? (
-										<EmblaImageCarousel
-											slides={product.imageUrls
-												.filter(
-													(u): u is string => typeof u === "string" && u.length > 0,
-												)
-												.map((src, index) => ({
-													id: src,
-													src,
-													alt: `${product.name} image ${index + 1}`,
-												}))}
-											options={{
-												loop:
-													(product.imageUrls?.filter(
-														(u): u is string =>
-															typeof u === "string" && u.length > 0,
-													).length ?? 0) > 1,
-											}}
-										/>
-									) : (
-										<div className="p-10 text-sm text-slate-500">No images.</div>
-									)}
+			<div className="container mx-auto px-4 py-8">
+				<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+					<section className="space-y-4 lg:col-span-5">
+						<div className="rounded-2xl bg-white overflow-hidden">
+							<ProductImageGallery
+								productName={product.name}
+								imageUrls={(product.imageUrls ?? []).filter(
+									(u): u is string => typeof u === "string" && u.length > 0,
+								)}
+							/>
+						</div>
+					</section>
+
+					<aside className="lg:col-span-7">
+						<div className="lg:sticky lg:top-6 space-y-3">
+							<div className="rounded-2xl bg-white p-5 space-y-4">
+								<h1 className="text-2xl font-semibold leading-tight">
+									{product.name}
+								</h1>
+								<ProductMeta
+									productId={productId}
+									productName={product.name}
+									imageUrl={product.imageUrls?.[0] ?? null}
+									shop={product.shop}
+									basePrice={product.basePrice}
+									variants={variants}
+									skus={skus}
+									minSkuPrice={product.minSkuPrice}
+									maxSkuPrice={product.maxSkuPrice}
+								/>
+							</div>
+						</div>
+					</aside>
+
+					<div className="rounded-2xl border bg-white p-5 space-y-3 col-span-12">
+						<div className="">
+							<button
+								className="flex items-center justify-between cursor-pointer w-full"
+								onClick={() => setIsDetailOpen((v) => !v)}
+							>
+								<h2 className="text-lg font-semibold">Details</h2>
+								{/** biome-ignore lint/a11y/useButtonType: <explanation> */}
+								<div className="">
+									{isDetailOpen ? <ChevronUp /> : <ChevronDown />}
 								</div>
-
-								<div className="rounded-2xl border bg-white p-5 space-y-3">
-									<div className="space-y-2">
-										<h1 className="text-2xl font-semibold leading-tight">
-											{product.name}
-										</h1>
-
-										{product.shop ? (
-											<div className="flex items-center gap-2">
-												{product.shop.logoUrl && (
-													<img
-														src={product.shop.logoUrl}
-														alt={`${product.shop.name} logo`}
-														className="h-7 w-7 rounded-full border object-cover bg-slate-50"
-														loading="lazy"
-													/>
-												)}
-												<Link
-													to="/shop/$slug"
-													params={{ slug: product.shop.slug }}
-													className="text-sm text-slate-600 hover:underline hover:underline-offset-4"
-												>
-													{product.shop.name}
-												</Link>
-											</div>
-										) : (
-											<p className="text-sm text-slate-500">Unknown shop</p>
-										)}
-									</div>
-
+							</button>
+							{/* <div className="space-y-2">
+							{product.shop ? (
+								<div className="flex items-center gap-2">
+									{product.shop.logoUrl && (
+										<img
+											src={product.shop.logoUrl}
+											alt={`${product.shop.name} logo`}
+											className="h-7 w-7 rounded-full border object-cover bg-slate-50"
+											loading="lazy"
+										/>
+									)}
+									<Link
+										to="/shop/$slug"
+										params={{ slug: product.shop.slug }}
+										className="text-sm text-slate-600 hover:underline hover:underline-offset-4"
+									>
+										{product.shop.name}
+									</Link>
+								</div>
+							) : (
+								<p className="text-sm text-slate-500">Unknown shop</p>
+							)}
+						</div> */}
+							{isDetailOpen && (
+								<div className="my-8">
 									{product.description ? (
 										<p className="text-slate-700 whitespace-pre-wrap">
 											{product.description}
@@ -169,95 +186,192 @@ function skuKey(options: { name: string; value: string }[]) {
 										<p className="text-sm text-slate-500">No description.</p>
 									)}
 								</div>
-							</section>
+							)}
+						</div>
+						<hr />
 
-							<aside className="lg:col-span-3">
-								<div className="lg:sticky lg:top-6 space-y-3">
-									<div className="rounded-2xl border bg-white p-5 space-y-4">
-										<div className="space-y-1">
-											<p className="text-sm font-semibold">Checkout</p>
-											<p className="text-xs text-slate-500">
-												Select variant and quantity.
-											</p>
-										</div>
-
-										<ProductMeta
-											productId={productId}
-											productName={product.name}
-											imageUrl={product.imageUrls?.[0] ?? null}
-											shop={product.shop}
-											basePrice={product.basePrice}
-											variants={variants}
-											skus={skus}
-											minSkuPrice={product.minSkuPrice}
-											maxSkuPrice={product.maxSkuPrice}
-										/>
-									</div>
-								</div>
-							</aside>
-
-							<section className="lg:col-span-4">
-								<div className="rounded-2xl border bg-white p-5 space-y-4">
-									<div className="flex items-start justify-between gap-3">
-										<div>
-											<h2 className="text-lg font-semibold">Ratings & reviews</h2>
-											{reviewSummary && (
-												<p className="text-sm text-slate-600">
-													{reviewSummary.reviewCount === 0
-														? "No reviews yet."
-														: `${reviewSummary.avgRating ?? "-"} / 5 • ${reviewSummary.reviewCount} review(s)`}
-												</p>
+						<section>
+							<div className="flex items-start justify-between gap-3 mb-4">
+								<div>
+									<h2 className="text-lg font-semibold">Ratings & reviews</h2>
+									{reviewSummary && (
+										<p className="text-sm text-slate-600 flex items-center gap-2">
+											{reviewSummary.reviewCount === 0 ? (
+												""
+											) : (
+												<>
+													<Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+													{`${reviewSummary.avgRating ?? "-"} / 5 • ${reviewSummary.reviewCount} review(s)`}
+												</>
 											)}
-										</div>
-									</div>
-
-									{reviews === undefined ? (
-										<p className="text-sm text-slate-500">Loading reviews...</p>
-									) : reviews.length === 0 ? (
-										<p className="text-sm text-slate-500">No reviews yet.</p>
-									) : (
-										<ul className="space-y-3">
-											{reviews.map((r) => (
-												<li key={r._id} className="rounded-xl border p-4 space-y-2">
-													<div className="flex items-start justify-between gap-3">
-														<div className="min-w-0">
-															<p className="text-sm font-medium line-clamp-1">
-																{r.buyer.name}
-															</p>
-															<p className="text-xs text-slate-500">
-																Rating: {r.rating} / 5
-															</p>
-														</div>
-													</div>
-													{r.reviewText && (
-														<p className="text-sm text-slate-700 whitespace-pre-wrap">
-															{r.reviewText}
-														</p>
-													)}
-													{r.imageUrls.length > 0 && (
-														<div className="flex flex-wrap gap-2">
-															{r.imageUrls.map((u) => (
-																// biome-ignore lint/a11y/useAltText: review image
-																<img
-																	key={u}
-																	src={u}
-																	className="h-20 w-20 rounded-lg border object-cover"
-																	loading="lazy"
-																/>
-															))}
-														</div>
-													)}
-												</li>
-											))}
-										</ul>
+										</p>
 									)}
 								</div>
-							</section>
-						</div>
+							</div>
+
+							{reviews === undefined ? (
+								<p className="text-sm text-slate-500">Loading reviews...</p>
+							) : reviews.length === 0 ? (
+								<p className="text-sm text-slate-500">No reviews yet.</p>
+							) : (
+								<ul className="space-y-3">
+									{reviews.map((r) => (
+										<li key={r._id} className="border-b p-4 space-y-2">
+											<div className="flex items-start justify-between gap-3">
+												<div className="min-w-0 flex items-center gap-3">
+													{r.buyer.imageUrl && (
+														<img
+															src={r.buyer.imageUrl}
+															alt={r.buyer.name}
+															className="h-10 w-10 rounded-full"
+														/>
+													)}
+													<div className="flex flex-col justify-between">
+														<p className="text-sm font-medium line-clamp-1 font-semibold">
+															{r.buyer.name}
+														</p>
+														<span className="flex items-center gap-0.5">
+															{[1, 2, 3, 4, 5].map((star) => (
+																<Star
+																	key={star}
+																	className={`w-3 h-3 ${
+																		star <= r.rating
+																			? "text-yellow-400 fill-yellow-400"
+																			: "text-slate-300"
+																	}`}
+																/>
+															))}
+														</span>
+													</div>
+												</div>
+											</div>
+											{r.reviewText && (
+												<p className="text-sm text-slate-700 whitespace-pre-wrap">
+													{r.reviewText}
+												</p>
+											)}
+											{r.imageUrls.length > 0 && (
+												<div className="flex flex-wrap gap-2">
+													{r.imageUrls.map((u) => (
+														// biome-ignore lint/a11y/useAltText: review image
+														<img
+															key={u}
+															src={u}
+															className="h-20 w-20 rounded-lg border object-cover"
+															loading="lazy"
+														/>
+													))}
+												</div>
+											)}
+										</li>
+									))}
+								</ul>
+							)}
+						</section>
 					</div>
-				</>
-			);
-		}
+				</div>
+			</div>
+		</>
+	);
+}
+
+function ProductImageGallery(props: {
+	productName: string;
+	imageUrls: string[];
+}) {
+	const { imageUrls } = props;
+	const hasImages = imageUrls.length > 0;
+
+	const [selectedIndex, setSelectedIndex] = useState(0);
+	const [viewportRef, emblaApi] = useEmblaCarousel({
+		align: "start",
+		loop: imageUrls.length > 1,
+	});
+
+	const syncSelected = useCallback(() => {
+		if (!emblaApi) return;
+		const api = emblaApi as unknown as Record<string, unknown>;
+		const selectedSnap = api.selectedSnap;
+		const selectedScrollSnap = api.selectedScrollSnap;
+		if (typeof selectedSnap === "function")
+			setSelectedIndex((selectedSnap as () => number)());
+		else if (typeof selectedScrollSnap === "function")
+			setSelectedIndex((selectedScrollSnap as () => number)());
+	}, [emblaApi]);
+
+	useEffect(() => {
+		if (!emblaApi) return;
+		syncSelected();
+		emblaApi.on("reinit", syncSelected).on("select", syncSelected);
+	}, [emblaApi, syncSelected]);
+
+	const scrollTo = useCallback(
+		(index: number) => {
+			if (!emblaApi) return;
+			const api = emblaApi as unknown as Record<string, unknown>;
+			const goTo = api.goTo;
+			const scrollTo = api.scrollTo;
+			if (typeof goTo === "function") (goTo as (i: number) => void)(index);
+			else if (typeof scrollTo === "function")
+				(scrollTo as (i: number) => void)(index);
+		},
+		[emblaApi],
+	);
+
+	if (!hasImages) {
+		return <div className="p-10 text-sm text-slate-500">No images.</div>;
+	}
+
+	return (
+		<div className="space-y-3 pb-1">
+			<div className="aspect-square w-full overflow-hidden rounded-2xl border bg-slate-50">
+				<div className="h-full w-full overflow-hidden" ref={viewportRef}>
+					<div className="flex h-full">
+						{imageUrls.map((src, index) => (
+							<div
+								key={src}
+								className="h-full min-w-0 flex-[0_0_100%] select-none"
+							>
+								<img
+									src={src}
+									alt={`${props.productName} thumbnail ${index + 1}`}
+									className="h-full w-full object-contain"
+									loading={index === 0 ? "eager" : "lazy"}
+									fetchPriority={index === 0 ? "high" : "auto"}
+									decoding="async"
+								/>
+							</div>
+						))}
+					</div>
+				</div>
+			</div>
+
+			<div className="flex flex-wrap justify-center gap-2">
+				{imageUrls.map((src, index) => (
+					<button
+						key={`${src}:${index}`}
+						type="button"
+						onClick={() => scrollTo(index)}
+						className={`h-16 w-16 overflow-hidden rounded-xl border bg-white transition ${
+							index === selectedIndex
+								? "ring-2 ring-emerald-500"
+								: "hover:shadow"
+						}`}
+						aria-label={`Select image ${index + 1}`}
+					>
+						<img
+							src={src}
+							alt={`${props.productName} thumbnail ${index + 1}`}
+							className="h-full w-full object-contain p-1"
+							loading="lazy"
+							decoding="async"
+						/>
+					</button>
+				))}
+			</div>
+		</div>
+	);
+}
 
 function ProductMeta(props: {
 	productId: Id<"products">;
@@ -430,7 +544,7 @@ function ProductMeta(props: {
 					}}
 					className="cursor-pointer rounded-md border px-4 py-2 text-sm disabled:opacity-50"
 				>
-					Add to cart
+					<ShoppingCart className="h-4 w-4" />
 				</button>
 
 				<button
@@ -470,18 +584,18 @@ function ProductMeta(props: {
 					className="cursor-pointer rounded-md bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
 				>
 					Checkout Now
-					</button>
-					{selectedSku && Number.isFinite(qty) && qty > selectedSku.stock && (
-						<p className="text-xs text-red-600">Max {selectedSku.stock}.</p>
-					)}
-					{!selectedSku ? (
-						<p className="text-xs text-slate-500">
-							Please select an available variant.
-						</p>
-					) : (
-						selectedSku.stock <= 0 && (
-							<p className="text-xs text-slate-500">Out of stock.</p>
-						)
+				</button>
+				{selectedSku && Number.isFinite(qty) && qty > selectedSku.stock && (
+					<p className="text-xs text-red-600">Max {selectedSku.stock}.</p>
+				)}
+				{!selectedSku ? (
+					<p className="text-xs text-slate-500">
+						Please select an available variant.
+					</p>
+				) : (
+					selectedSku.stock <= 0 && (
+						<p className="text-xs text-slate-500">Out of stock.</p>
+					)
 				)}
 			</div>
 
