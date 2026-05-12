@@ -1,8 +1,8 @@
-import type { Id } from "../../convex/_generated/dataModel";
 import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import ProductCard from "../components/ui/ProductCard";
 import { useMemo } from "react";
+import { api } from "../../convex/_generated/api";
+import type { Id } from "../../convex/_generated/dataModel";
+import ProductCard from "../components/ui/ProductCard";
 
 export type PublicProduct = {
 	_id: Id<"products">;
@@ -38,27 +38,44 @@ const ProductsHome = ({
 			};
 		});
 	}, [products, summaries]);
-	return (
-		<div className="space-y-6">
-			<div>
-				<h2 className="text-lg font-semibold">Products</h2>
-				{!nodesc && (
-					<p className="text-sm text-slate-500">
-						Browse the latest active products.
-					</p>
-				)}
-			</div>
 
-				{products.length === 0 ? (
-					<p className="text-sm text-slate-500">No products yet.</p>
-				) : (
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-						{merged.map((product) => (
-							<ProductCard key={product._id} product={product} />
-						))}
+	return (
+		<>
+			<section className="container mx-auto">
+				<div className="space-y-8">
+					<div className="text-center">
+						<h2 className="section-heading uppercase">Featured</h2>
 					</div>
-				)}
-		</div>
+
+					{products.length === 0 ? (
+						<p className="text-sm text-slate-500">No products yet.</p>
+					) : (
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 justify-center">
+							{merged.map((product) => (
+								<ProductCard key={product._id} product={product} />
+							))}
+						</div>
+					)}
+				</div>
+			</section>
+			<section className="container mx-auto">
+				<div className="space-y-8">
+					<div className="text-center">
+						<h2 className="section-heading uppercase">Latest</h2>
+					</div>
+
+					{products.length === 0 ? (
+						<p className="text-sm text-slate-500">No products yet.</p>
+					) : (
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 justify-center">
+							{merged.map((product) => (
+								<ProductCard key={product._id} product={product} />
+							))}
+						</div>
+					)}
+				</div>
+			</section>
+		</>
 	);
 };
 

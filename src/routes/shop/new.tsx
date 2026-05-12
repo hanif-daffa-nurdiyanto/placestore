@@ -4,6 +4,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { useMutation } from "convex/react";
 import { useEffect, useRef, useState } from "react";
 import { pageTitle } from "#/lib/seo";
+import { uploadImage } from "#/lib/convex";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 
@@ -79,17 +80,7 @@ function CreateShopPage() {
 	};
 
 	async function uploadLogo(file: File): Promise<Id<"_storage">> {
-		const uploadUrl = await generateUploadUrl();
-		const result = await fetch(uploadUrl, {
-			method: "POST",
-			headers: { "Content-Type": file.type || "application/octet-stream" },
-			body: file,
-		});
-
-		if (!result.ok) throw new Error("Failed to upload logo");
-		const json = (await result.json()) as { storageId?: Id<"_storage"> };
-		if (!json.storageId) throw new Error("Upload did not return storageId");
-		return json.storageId;
+		return uploadImage({ file, generateUploadUrl });
 	}
 
 	const handleSubmit = async (e: React.FormEvent) => {

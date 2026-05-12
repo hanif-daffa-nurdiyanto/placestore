@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { uploadImage as uploadImageToStorage } from "#/lib/convex";
 import { pageTitle } from "#/lib/seo";
 import { api } from "../../../../convex/_generated/api";
 import type { Id } from "../../../../convex/_generated/dataModel";
@@ -75,16 +76,7 @@ function Page() {
 	};
 
 	async function uploadImage(file: File): Promise<Id<"_storage">> {
-		const uploadUrl = await generateUploadUrl();
-		const result = await fetch(uploadUrl, {
-			method: "POST",
-			headers: { "Content-Type": file.type || "application/octet-stream" },
-			body: file,
-		});
-		if (!result.ok) throw new Error("Failed to upload image");
-		const json = (await result.json()) as { storageId?: Id<"_storage"> };
-		if (!json.storageId) throw new Error("Upload did not return storageId");
-		return json.storageId;
+		return uploadImageToStorage({ file, generateUploadUrl });
 	}
 
 	const orderedCategories = useMemo(() => {

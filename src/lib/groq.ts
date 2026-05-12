@@ -17,3 +17,15 @@ export async function prompt(prompt: string) {
 		model: "openai/gpt-oss-20b",
 	});
 }
+
+export type ChatMessage = {
+	role: "system" | "user" | "assistant";
+	content: string;
+};
+
+export async function chat(messages: ChatMessage[]) {
+	return groq.chat.completions.create({
+		messages,
+		model: "openai/gpt-oss-20b",
+	});
+}

@@ -6,6 +6,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { uploadImages } from "#/lib/convex";
 import { formatIDR, formatIDRMaybe } from "#/lib/money";
 import { formatDateTime } from "#/lib/utils";
 import type { TransactionWithShop } from "#/types/transactions";
@@ -226,24 +227,13 @@ const OrderItem = ({ transaction: t }: OrderItemProps) => {
 									if (isSubmittingReview) return;
 									try {
 										setIsSubmittingReview(true);
-										const imageIds: Id<"_storage">[] = [];
-										for (const img of reviewImages) {
-											const uploadUrl = await generateReviewUploadUrl();
-											const res = await fetch(uploadUrl, {
-												method: "POST",
-												headers: {
-													"Content-Type":
-														img.file.type || "application/octet-stream",
-												},
-												body: img.file,
-											});
-											if (!res.ok) throw new Error("Failed to upload image");
-											const json = (await res.json()) as {
-												storageId?: Id<"_storage">;
-											};
-											if (!json.storageId) throw new Error("Upload failed");
-											imageIds.push(json.storageId);
-										}
+										const imageIds =
+											reviewImages.length > 0
+												? await uploadImages({
+														files: reviewImages.map((x) => x.file),
+														generateUploadUrl: generateReviewUploadUrl,
+													})
+												: [];
 
 										await createReview({
 											transactionId: t._id,

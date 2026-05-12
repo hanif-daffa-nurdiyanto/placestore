@@ -1,7 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { Star } from "lucide-react";
-import type { PublicProduct } from "#/section/ProductsHome";
 import { formatIDRMaybe } from "#/lib/money";
+import type { PublicProduct } from "#/section/ProductsHome";
 
 const ProductCard = ({ product }: { product: PublicProduct }) => {
 	const base = typeof product.basePrice === "number" ? product.basePrice : null;
@@ -11,62 +10,97 @@ const ProductCard = ({ product }: { product: PublicProduct }) => {
 		base !== null && minSku !== null && Number.isFinite(base) && base > minSku;
 
 	return (
-		<div className="rounded-xl border overflow-hidden">
-			<div className="aspect-square bg-slate-100">
+		<Link
+			to={`/product/$id`}
+			params={{ id: product._id }}
+			className="group cursor-pointer rounded-2xl border py-2 transition-shadow duration-200 hover:shadow-lg"
+		>
+			<div className="flex flex-col items-end">
+				<div className="w-12 h-12  rounded-md mr-2"></div>
 				{product.imageUrl ? (
-					// biome-ignore lint/a11y/useAltText: marketplace card
-					<img src={product.imageUrl} className="h-full w-full object-cover" />
+					<img
+						src={product.imageUrl}
+						className="aspect-square w-full mb-8 object-cover transition-transform duration-200 group-hover:scale-95"
+						loading="lazy"
+						alt={product.name}
+					/>
 				) : (
-					<div className="h-full w-full flex items-center justify-center text-xs text-slate-400">
+					<div className="aspect-square w-full mb-8 object-cover bg-slate-200 justify-center flex items-center">
 						No image
 					</div>
 				)}
 			</div>
-
-				<div className="p-3 space-y-1">
-					<Link to="/product/$id" params={{ id: product._id }}>
-						<p className="font-medium line-clamp-1">{product.name}</p>
-					</Link>
-
-					{typeof product.reviewCount === "number" && product.reviewCount > 0 && (
-						<div className="flex items-center gap-1 text-xs text-slate-600">
-							<Star className="h-3.5 w-3.5 fill-current" />
-							<span className="font-medium">{product.avgRating ?? "-"}</span>
-							<span className="text-slate-500">({product.reviewCount})</span>
-						</div>
-					)}
-
-				{minSku !== null ? (
-					<div className="flex items-baseline gap-2">
-						<p className="text-sm font-semibold">{formatIDRMaybe(minSku)}</p>
-						{showStrike && (
-							<p className="text-xs text-slate-500 line-through">
-								{formatIDRMaybe(base)}
-							</p>
-						)}
-					</div>
-				) : (
-					<p className="text-xs text-slate-500">Price not set</p>
-				)}
-
-				{product.shop ? (
-					<Link to="/shop/$slug" params={{ slug: product.shop.slug }}>
-						<p className="text-xs text-slate-500 line-clamp-1">
-							{product.shop.name}
-						</p>
-					</Link>
-				) : (
-					<p className="text-xs text-slate-500">Unknown shop</p>
-				)}
-
-				{product.description && (
-					<p className="text-sm text-slate-600 line-clamp-2">
-						{product.description}
-					</p>
-				)}
+			<div className="flex flex-col items-center px-4">
+				<p className="w-full text-center font-semibold text-sm">
+					{product.name}
+				</p>
+				<p className="border-b w-full text-center font-semibold text-xs pb-3 truncate">
+					{product.description}
+				</p>
+				<span className="font-bold text-center my-4 text-xl">
+					{formatIDRMaybe(product.basePrice)}
+				</span>
 			</div>
-		</div>
+		</Link>
 	);
 };
 
 export default ProductCard;
+
+// return (
+// 		<div className="rounded-xl border overflow-hidden product-card-hover bg-white">
+// 			<div className="aspect-square bg-slate-100 overflow-hidden">
+// 				{product.imageUrl ? (
+// 					// biome-ignore lint/a11y/useAltText: marketplace card
+// 					<img src={product.imageUrl} className="h-full w-full object-cover" />
+// 				) : (
+// 					<div className="h-full w-full flex items-center justify-center text-xs text-slate-400">
+// 						No image
+// 					</div>
+// 				)}
+// 			</div>
+
+// 			<div className="p-3 space-y-1">
+// 				<Link to="/product/$id" params={{ id: product._id }}>
+// 					<p className="font-medium line-clamp-1">{product.name}</p>
+// 				</Link>
+
+// 				{typeof product.reviewCount === "number" && product.reviewCount > 0 && (
+// 					<div className="flex items-center gap-1 text-xs text-slate-600">
+// 						<Star className="h-3.5 w-3.5 fill-current" />
+// 						<span className="font-medium">{product.avgRating ?? "-"}</span>
+// 						<span className="text-slate-500">({product.reviewCount})</span>
+// 					</div>
+// 				)}
+
+// 				{minSku !== null ? (
+// 					<div className="flex items-baseline gap-2">
+// 						<p className="text-sm font-semibold">{formatIDRMaybe(minSku)}</p>
+// 						{showStrike && (
+// 							<p className="text-xs text-slate-500 line-through">
+// 								{formatIDRMaybe(base)}
+// 							</p>
+// 						)}
+// 					</div>
+// 				) : (
+// 					<p className="text-xs text-slate-500">Price not set</p>
+// 				)}
+
+// 				{product.shop ? (
+// 					<Link to="/shop/$slug" params={{ slug: product.shop.slug }}>
+// 						<p className="text-xs text-slate-500 line-clamp-1">
+// 							{product.shop.name}
+// 						</p>
+// 					</Link>
+// 				) : (
+// 					<p className="text-xs text-slate-500">Unknown shop</p>
+// 				)}
+
+// 				{product.description && (
+// 					<p className="text-sm text-slate-600 line-clamp-2">
+// 						{product.description}
+// 					</p>
+// 				)}
+// 			</div>
+// 		</div>
+// 	);

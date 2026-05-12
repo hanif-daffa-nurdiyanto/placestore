@@ -1,104 +1,98 @@
 /** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "convex/react";
+import { ArrowRight } from "lucide-react";
 import EmblaAdvertisementCarousel from "#/components/ui/embla/EmblaAdvertisementCarousel";
-import EmblaCarousel from "#/components/ui/embla/EmblaCarousel";
 import { Header } from "#/components/ui/Header";
+import LandingChatbot from "#/components/ui/LandingChatbot";
 import { pageTitle } from "#/lib/seo";
+import { HomeCategories } from "#/section/HomeCategories";
 import ProductsHome from "#/section/ProductsHome";
 import { api } from "../../convex/_generated/api";
 
 export const Route = createFileRoute("/")({
-	head: () => ({
-		meta: [{ title: pageTitle("Home") }],
-	}),
+	head: ({ loaderData }) => {
+		const firstAdImage =
+			loaderData?.ads?.find((a) => typeof a.imageUrl === "string" && a.imageUrl)
+				?.imageUrl ?? null;
+
+		return {
+			meta: [{ title: pageTitle("Home") }],
+			links: firstAdImage
+				? [
+						{
+							rel: "preload",
+							as: "image",
+							href: firstAdImage,
+							fetchPriority: "high",
+						},
+					]
+				: [],
+		};
+	},
 	component: Home,
 	loader: async ({ context }) => {
 		const products = await context.convexClient.query(
 			api.products.listPublic,
 			{},
 		);
+		const ads = await context.convexClient.query(api.advertisements.listActive, {});
 
-		return { products };
+		return { products, ads };
 	},
 });
+
 function Home() {
-	const { products } = Route.useLoaderData();
-	const ads = useQuery(api.advertisements.listActive);
-	const categories = useQuery(api.categories.listAll);
+	const { products, ads } = Route.useLoaderData();
 
 	return (
-		<div className="min-h-screen">
+		<div className="min-h-screen" dir="ltr">
 			<Header />
 
-			<div className="">
-				{ads && ads.length > 0 ? (
-					<EmblaAdvertisementCarousel
-						slides={ads
-							.filter((a) => typeof a.imageUrl === "string" && a.imageUrl)
-							.map((a) => ({
-								id: a._id,
-								label: a.label,
-								imageUrl: a.imageUrl as string,
-								url: a.url,
-							}))}
-						options={{ loop: true }}
-					/>
-				) : (
-					<EmblaCarousel
-						slides={Array.from(Array(5).keys())}
-						options={{ loop: true }}
-					/>
-				)}
-			</div>
-
-			<main className="container mx-auto py-10 space-y-6">
-				<div className="space-y-3">
-					<div>
-						<h2 className="text-lg font-semibold">Category</h2>
-					</div>
-
-					{categories === undefined ? (
-						<div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-4">
-							{Array.from({ length: 8 }).map((_, i) => (
-								<div key={i} className="animate-pulse">
-									<div className="aspect-square rounded-2xl bg-slate-100" />
-									<div className="mt-2 h-3 w-3/4 rounded bg-slate-100 mx-auto" />
-								</div>
-							))}
+			<main className="mx-auto space-y-6 pb-20">
+				{/* ── Hero Carousel ── */}
+				<section className="">
+					{ads && ads.length > 0 ? (
+						<div className="">
+							<EmblaAdvertisementCarousel
+								slides={ads
+									.filter((a) => typeof a.imageUrl === "string" && a.imageUrl)
+									.map((a) => ({
+										id: a._id,
+										label: a.label,
+										imageUrl: a.imageUrl as string,
+										url: a.url,
+									}))}
+								options={{ loop: true }}
+							/>
 						</div>
-					) : categories.length === 0 ? (
-						<p className="text-sm text-slate-500">No categories yet.</p>
 					) : (
-						<div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-8 gap-4">
-							{categories.map((category) => (
-								<div key={category._id} className="text-center cursor-pointer">
-									<Link
-										to="/explore" search={{ categoryId: category._id }}
-										className="aspect-square rounded-2xl border bg-slate-50 overflow-hidden flex items-center justify-center"
-									>
-										{category.imageUrl ? (
-											<img
-												src={category.imageUrl}
-												alt={category.name}
-												className="h-full w-full object-cover"
-												loading="lazy"
-											/>
-										) : (
-											<span className="text-xs text-slate-400">No image</span>
-										)}
-									</Link>
-									<p className="mt-2 text-sm font-medium truncate">
-										{category.name}
-									</p>
-								</div>
-							))}
+						<div className="home-fallback-hero">
+							<div className="relative z-10 container mx-auto py-12 sm:px-14 sm:py-12 space-y-5">
+								<p className="island-kicker">Welcome to Place Store</p>
+								<h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight display-title">
+									Discover Amazing Products
+								</h2>
+								<p className="text-white/80 text-base sm:text-lg leading-relaxed max-w-md">
+									Shop the latest from local sellers. Fast checkout, reliable
+									delivery, all in one place.
+								</p>
+								<Link to="/explore" className="home-cta mt-2">
+									Start Shopping
+									<ArrowRight className="h-4 w-4" />
+								</Link>
+							</div>
 						</div>
 					)}
-				</div>
+				</section>
 
+				{/* ── Category Strip ── */}
+				<HomeCategories />
+
+				{/* ── Featured Products ── */}
 				<ProductsHome products={products} />
 			</main>
+
+			<LandingChatbot />
 		</div>
 	);
 }

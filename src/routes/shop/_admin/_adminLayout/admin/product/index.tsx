@@ -47,7 +47,7 @@ function RouteComponent() {
 
 			<Link
 				to="/shop/admin/product/new"
-				className="inline-flex w-fit text-sm text-white"
+				className="inline-flex w-fit text-sm"
 			>
 				New Product
 			</Link>
