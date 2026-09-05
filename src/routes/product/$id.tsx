@@ -142,10 +142,10 @@ function RouteComponent() {
 		<>
 			<Header />
 
-			<div className="mega-container mx-auto py-8">
-				<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-					<section className="space-y-4 lg:col-span-5">
-						<div className="rounded-2xl bg-white overflow-hidden">
+			<main className="product-page mega-container mx-auto">
+				<div className="product-page__layout grid grid-cols-1 lg:grid-cols-12">
+					<section className="product-page__gallery min-w-0 lg:col-span-5">
+						<div className="product-gallery-card">
 							<ProductImageGallery
 								key={selectedSkuImageUrl ?? "product-images"}
 								productName={product.name}
@@ -154,30 +154,26 @@ function RouteComponent() {
 						</div>
 					</section>
 
-					<aside className="lg:col-span-7">
-						<div className="lg:sticky lg:top-6 space-y-3">
-							<div className="rounded-2xl bg-white p-5 space-y-4">
-								<h1 className="text-2xl font-semibold leading-tight">
-									{product.name}
-								</h1>
-								<ProductMeta
-									productId={productId}
-									productName={product.name}
-									imageUrl={productImageUrls[0] ?? null}
-									shop={product.shop}
-									basePrice={product.basePrice}
-									variants={variants}
-									skus={skus}
-									minSkuPrice={product.minSkuPrice}
-									maxSkuPrice={product.maxSkuPrice}
-									onSkuImageChange={setSelectedSkuImageUrl}
-								/>
-							</div>
+					<aside className="product-page__summary min-w-0 lg:col-span-7">
+						<div className="product-summary-card lg:sticky lg:top-6">
+							<h1 className="product-page__title">{product.name}</h1>
+							<ProductMeta
+								productId={productId}
+								productName={product.name}
+								imageUrl={productImageUrls[0] ?? null}
+								shop={product.shop}
+								basePrice={product.basePrice}
+								variants={variants}
+								skus={skus}
+								minSkuPrice={product.minSkuPrice}
+								maxSkuPrice={product.maxSkuPrice}
+								onSkuImageChange={setSelectedSkuImageUrl}
+							/>
 						</div>
 					</aside>
 
 					{product.shop && (
-						<section className="product-shop-card col-span-12">
+						<section className="product-shop-card">
 							<div className="product-shop-card__identity">
 								{product.shop.logoUrl ? (
 									<img
@@ -219,7 +215,7 @@ function RouteComponent() {
 						</section>
 					)}
 
-					<div className="rounded-2xl border bg-white p-5 space-y-3 col-span-12">
+					<section className="product-details-card">
 						<div className="">
 							<button
 								type="button"
@@ -245,7 +241,7 @@ function RouteComponent() {
 						</div>
 						<hr />
 
-						<section>
+						<section className="product-reviews">
 							<div className="flex items-start justify-between gap-3 mb-4">
 								<div>
 									<h2 className="text-lg font-semibold">Ratings & reviews</h2>
@@ -271,7 +267,7 @@ function RouteComponent() {
 							) : (
 								<ul className="space-y-3">
 									{reviews.map((r) => (
-										<li key={r._id} className="border-b p-4 space-y-2">
+										<li key={r._id} className="product-review-item">
 											<div className="flex items-start justify-between gap-3">
 												<div className="min-w-0 flex items-center gap-3">
 													{r.buyer.imageUrl && (
@@ -323,9 +319,9 @@ function RouteComponent() {
 								</ul>
 							)}
 						</section>
-					</div>
+					</section>
 				</div>
-			</div>
+			</main>
 		</>
 	);
 }
@@ -378,8 +374,8 @@ function ProductImageGallery(props: {
 	}
 
 	return (
-		<div className="space-y-3 pb-1">
-			<div className="aspect-square w-full overflow-hidden rounded-2xl border bg-slate-50">
+		<div className="product-gallery">
+			<div className="product-gallery__stage">
 				<div className="h-full w-full overflow-hidden" ref={viewportRef}>
 					<div className="flex h-full">
 						{imageUrls.map((src, index) => (
@@ -401,13 +397,13 @@ function ProductImageGallery(props: {
 				</div>
 			</div>
 
-			<div className="flex flex-wrap justify-center gap-2">
+			<nav className="product-gallery__thumbs" aria-label="Product images">
 				{imageUrls.map((src, index) => (
 					<button
 						key={src}
 						type="button"
 						onClick={() => scrollTo(index)}
-						className={`h-16 w-16 overflow-hidden rounded-xl border bg-white transition ${
+						className={`product-gallery__thumb ${
 							index === selectedIndex
 								? "ring-2 ring-emerald-500"
 								: "hover:shadow"
@@ -423,7 +419,7 @@ function ProductImageGallery(props: {
 						/>
 					</button>
 				))}
-			</div>
+			</nav>
 		</div>
 	);
 }
@@ -547,7 +543,7 @@ function ProductMeta(props: {
 	const selectionUnavailable = !selectedSku || selectedSku.stock <= 0;
 
 	return (
-		<div className="space-y-4">
+		<div className="product-meta">
 			<div className="space-y-1">
 				{rangeLabel ? (
 					<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -569,7 +565,7 @@ function ProductMeta(props: {
 				</p>
 			</div>
 
-			<div className="flex flex-wrap items-center gap-2">
+			<div className="product-purchase-row">
 				<fieldset className="product-quantity-stepper">
 					<legend className="sr-only">Product quantity</legend>
 					<button
@@ -681,7 +677,7 @@ function ProductMeta(props: {
 					selectedSku.stock > 0 &&
 					Number.isFinite(qty) &&
 					qty > selectedSku.stock && (
-						<p className="text-xs text-red-600">Max {selectedSku.stock}.</p>
+						<p className="product-quantity-error">Max {selectedSku.stock}.</p>
 					)}
 				{selectionUnavailable && (
 					<div className="product-stock-alert" role="alert">
@@ -696,11 +692,11 @@ function ProductMeta(props: {
 			</div>
 
 			{variants.length > 0 && (
-				<div className="space-y-4">
+				<div className="product-variants">
 					{variants.map((v) => (
 						<div key={v.name} className="space-y-2">
 							<p className="text-xs text-slate-500">{v.name}</p>
-							<div className="flex flex-wrap gap-2">
+							<div className="product-variant-options">
 								{v.values.map((value) => {
 									const active = (selected[v.name] ?? "") === value;
 									return (

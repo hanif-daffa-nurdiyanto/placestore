@@ -211,4 +211,42 @@ export default defineSchema({
       "productId",
       "transactionId",
     ]),
+
+  seedRuns: defineTable({
+    namespace: v.string(),
+    status: v.union(
+      v.literal("running"),
+      v.literal("completed"),
+      v.literal("failed"),
+    ),
+    manifestVersion: v.string(),
+    startedAt: v.number(),
+    completedAt: v.optional(v.number()),
+    summary: v.optional(v.string()),
+  }).index("by_namespace", ["namespace"]),
+
+  seedRecords: defineTable({
+    namespace: v.string(),
+    entityType: v.union(
+      v.literal("shop"),
+      v.literal("product"),
+      v.literal("sku"),
+      v.literal("asset"),
+    ),
+    seedKey: v.string(),
+    entityId: v.string(),
+    checksum: v.string(),
+    storageId: v.optional(v.id("_storage")),
+    sourceUrl: v.optional(v.string()),
+    sourcePage: v.optional(v.string()),
+    creator: v.optional(v.string()),
+    license: v.optional(v.string()),
+    attribution: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  }).index("by_namespace_and_entityType_and_seedKey", [
+    "namespace",
+    "entityType",
+    "seedKey",
+  ]),
 });

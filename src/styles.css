@@ -546,6 +546,135 @@ a {
   --mega-green: #249b3f;
 }
 
+/* Product detail */
+.product-page {
+  padding-block: clamp(24px, 4vw, 48px);
+}
+
+.product-page__layout {
+  gap: clamp(18px, 2.5vw, 30px);
+}
+
+.product-page__layout > .product-shop-card,
+.product-page__layout > .product-details-card {
+  grid-column: 1 / -1;
+}
+
+.product-gallery-card,
+.product-summary-card,
+.product-details-card {
+  min-width: 0;
+  border: 1px solid var(--mega-line);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.product-gallery-card {
+  overflow: hidden;
+}
+
+.product-summary-card {
+  padding: clamp(20px, 2.5vw, 30px);
+}
+
+.product-page__title {
+  overflow-wrap: anywhere;
+  color: var(--mega-navy);
+  font-size: clamp(24px, 2.4vw, 34px);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.product-meta {
+  display: grid;
+  gap: 20px;
+  margin-top: 22px;
+}
+
+.product-gallery {
+  display: grid;
+  gap: 12px;
+  padding-bottom: 12px;
+}
+
+.product-gallery__stage {
+  width: 100%;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 15px;
+  background: #f7f7f7;
+}
+
+.product-gallery__thumbs {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  padding: 2px 12px 4px;
+  scrollbar-width: thin;
+  scroll-snap-type: x proximity;
+}
+
+.product-gallery__thumb {
+  width: 64px;
+  height: 64px;
+  flex: 0 0 64px;
+  overflow: hidden;
+  scroll-snap-align: start;
+  border: 1px solid #dfe4e7;
+  border-radius: 10px;
+  background: #fff;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+
+.product-purchase-row {
+  display: grid;
+  grid-template-columns: max-content 46px minmax(140px, max-content);
+  align-items: center;
+  gap: 10px;
+}
+
+.product-purchase-row .product-cart-button {
+  width: 46px;
+  padding-inline: 0;
+}
+
+.product-stock-alert,
+.product-quantity-error {
+  grid-column: 1 / -1;
+}
+
+.product-quantity-error {
+  color: #dc2626;
+  font-size: 11px;
+}
+
+.product-variants {
+  display: grid;
+  gap: 18px;
+}
+
+.product-variant-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.product-details-card {
+  padding: clamp(18px, 2.5vw, 28px);
+}
+
+.product-details-card hr {
+  margin-block: 18px;
+  border-color: var(--mega-line);
+}
+
+.product-review-item {
+  display: grid;
+  gap: 8px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--mega-line);
+}
+
 .product-cart-button,
 .product-checkout-button {
   min-height: 42px;
@@ -1240,6 +1369,26 @@ a {
   .product-shop-card { align-items: flex-start; flex-direction: column; padding: 17px; }
   .product-shop-card__identity > img, .product-shop-card__fallback { width: 54px; height: 54px; }
   .product-shop-card__link { width: 100%; justify-content: center; }
+  .product-page { padding-block: 16px 36px; }
+  .product-page__layout { gap: 14px; }
+  .product-summary-card { padding: 18px 16px; }
+  .product-page__title { font-size: clamp(22px, 7vw, 28px); }
+  .product-meta { gap: 18px; margin-top: 16px; }
+  .product-gallery { gap: 9px; padding-bottom: 9px; }
+  .product-gallery__stage { border-radius: 15px; }
+  .product-gallery__thumbs { justify-content: flex-start; padding-inline: 10px; }
+  .product-gallery__thumb { width: 54px; height: 54px; flex-basis: 54px; }
+  .product-purchase-row { grid-template-columns: minmax(0, 1fr) 46px; gap: 8px; }
+  .product-purchase-row .product-quantity-stepper { width: auto; min-width: 0; grid-template-columns: minmax(36px, 1fr) 48px minmax(36px, 1fr); }
+  .product-purchase-row .product-checkout-button { width: 100%; grid-column: 1 / -1; }
+  .product-cart-button, .product-checkout-button { min-height: 46px; }
+  .product-variant-button { min-height: 40px; padding: 9px 13px; }
+  .product-details-card { padding: 18px 16px; }
+  .product-details-card h2 { font-size: 16px; }
+  .product-review-item { padding-block: 14px; }
+  .product-shop-card__identity { width: 100%; align-items: flex-start; gap: 12px; }
+  .product-shop-card__copy { flex: 1; }
+  .product-shop-card__copy h2 { overflow-wrap: anywhere; font-size: 16px; }
   .shop-address-layout { grid-template-columns: 1fr; }
   .shop-address-map, .shop-address-map > *, .shop-address-map .leaflet-container { min-height: 260px; }
   .shop-address-card { padding: 18px; }
