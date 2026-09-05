@@ -28,7 +28,7 @@ function RouteComponent() {
 
 	if (!shop) {
 		return (
-			<div className="container mx-auto py-10 space-y-4">
+			<div className="mega-container mx-auto py-10 space-y-4">
 				<p className="text-sm text-slate-500">Shop not found.</p>
 				<Link to="/" className="underline text-sm">
 					Back
@@ -40,7 +40,7 @@ function RouteComponent() {
 	return (
 		<>
 			<Header />
-			<div className="container mx-auto py-10 space-y-6">
+			<div className="mega-container mx-auto py-10 space-y-6">
 				<div className="space-y-6 mb-12">
 					<div className="flex flex-col items-center gap-3">
 						{shop.logoUrl ? (
@@ -62,29 +62,47 @@ function RouteComponent() {
 
 				<ProductsHome products={products} nodesc />
 
-				<hr />
-				<h2 className="text-lg font-semibold">Address</h2>
-				<div className="max-w-2xl">
-					{shop.location &&
-						(isClient ? (
-							<ShopPublicMap
-								location={{ lat: shop.location.lat, lng: shop.location.lng }}
-							/>
-						) : (
-							<div className="h-80 w-full rounded-xl border bg-slate-50 flex items-center justify-center text-sm text-slate-500">
-								Loading map...
-							</div>
-						))}
-				</div>
-
-				{shop.address && (
-					<div className="flex gap-2 items-end">
-						<MapPin className="animate-bounce" />
-						<p className="text-sm text-slate-600 whitespace-pre-wrap">
-							{shop.address}
-						</p>
+				<section className="shop-address-section">
+					<div className="mega-section-heading">
+						<h2>
+							Store <span>Address</span>
+						</h2>
 					</div>
-				)}
+
+					<div className="shop-address-layout">
+						<div className="shop-address-map">
+							{shop.location ? (
+								isClient ? (
+									<ShopPublicMap
+										location={{
+											lat: shop.location.lat,
+											lng: shop.location.lng,
+										}}
+									/>
+								) : (
+									<div className="shop-address-map__placeholder">
+										Loading map...
+									</div>
+								)
+							) : (
+								<div className="shop-address-map__placeholder">
+									Location has not been added.
+								</div>
+							)}
+						</div>
+
+						<div className="shop-address-card">
+							<span className="shop-address-card__icon" aria-hidden="true">
+								<MapPin />
+							</span>
+							<div>
+								<small>Store location</small>
+								<h3>{shop.name}</h3>
+								<p>{shop.address || "Address has not been added."}</p>
+							</div>
+						</div>
+					</div>
+				</section>
 			</div>
 		</>
 	);

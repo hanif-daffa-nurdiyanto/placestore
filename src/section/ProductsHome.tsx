@@ -1,8 +1,11 @@
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
+import { ArrowRight } from "lucide-react";
 import { useMemo } from "react";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import ProductCard from "../components/ui/ProductCard";
+import { HomeCategories } from "./HomeCategories";
 
 export type PublicProduct = {
 	_id: Id<"products">;
@@ -16,63 +19,130 @@ export type PublicProduct = {
 	reviewCount?: number;
 };
 
+const SectionHeading = ({ children }: { children: React.ReactNode }) => (
+	<div className="mega-section-heading">
+		<h2>{children}</h2>
+		<Link to="/explore">
+			View All <ArrowRight />
+		</Link>
+	</div>
+);
+
 const ProductsHome = ({
 	products,
-	nodesc = false,
 }: {
 	products: PublicProduct[];
 	nodesc?: boolean;
 }) => {
 	const summaries = useQuery(
 		api.reviews.getSummariesForProducts,
-		products.length ? { productIds: products.map((p) => p._id) } : "skip",
+		products.length
+			? { productIds: products.map((product) => product._id) }
+			: "skip",
 	);
 	const merged = useMemo(() => {
 		if (!summaries) return products;
-		return products.map((p) => {
-			const s = summaries[String(p._id)];
+		return products.map((product) => {
+			const summary = summaries[String(product._id)];
 			return {
-				...p,
-				avgRating: s?.avgRating ?? null,
-				reviewCount: s?.reviewCount ?? 0,
+				...product,
+				avgRating: summary?.avgRating ?? null,
+				reviewCount: summary?.reviewCount ?? 0,
 			};
 		});
 	}, [products, summaries]);
 
+	if (products.length === 0) {
+		return (
+			<>
+				<section className="mega-section mega-container">
+					<SectionHeading>
+						Grab the best deal on <span>Featured Products</span>
+					</SectionHeading>
+					<div className="mega-empty-state">
+						Great deals will appear here as soon as products are published.
+					</div>
+				</section>
+				<HomeCategories />
+			</>
+		);
+	}
+
+	const brands = merged.slice(0, 3);
+	const essentials = merged.slice(0, 6);
+
 	return (
 		<>
-			<section className="container mx-auto">
-				<div className="space-y-8">
-					<div className="text-center">
-						<h2 className="section-heading uppercase">Featured</h2>
-					</div>
-
-					{products.length === 0 ? (
-						<p className="text-sm text-slate-500">No products yet.</p>
-					) : (
-						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 justify-center">
-							{merged.map((product) => (
-								<ProductCard key={product._id} product={product} />
-							))}
-						</div>
-					)}
+			<section className="mega-section mega-container">
+				<SectionHeading>
+					Grab the best deal on <span>Featured Products</span>
+				</SectionHeading>
+				<div className="deal-grid">
+					{merged.slice(0, 5).map((product) => (
+						<ProductCard key={product._id} product={product} />
+					))}
 				</div>
 			</section>
-			<section className="container mx-auto">
-				<div className="space-y-8">
-					<div className="text-center">
-						<h2 className="section-heading uppercase">Latest</h2>
-					</div>
 
-					{products.length === 0 ? (
-						<p className="text-sm text-slate-500">No products yet.</p>
-					) : (
-						<div className="grid grid-cols-1 sm:grid-cols-2  md:grid-cols-4 lg:grid-cols-6 gap-4 justify-center">
-							{merged.map((product) => (
-								<ProductCard key={product._id} product={product} />
-							))}
-						</div>
-					)}
+			<HomeCategories />
+
+			<section className="mega-section mega-container">
+				<SectionHeading>
+					Top <span>Stores &amp; Brands</span>
+				</SectionHeading>
+				<div className="brand-grid">
+					{brands.map((product, index) => (
+						<Link
+							key={product._id}
+							to="/product/$id"
+							params={{ id: product._id }}
+							className={`brand-card brand-card--${index + 1}`}
+						>
+							<div className="brand-card__copy">
+								<small>{product.shop?.name ?? "PLACE STORE"}</small>
+								<strong>{product.name}</strong>
+								<span>Up to 50% OFF</span>
+							</div>
+							{product.imageUrl ? (
+								<img src={product.imageUrl} alt="" loading="lazy" />
+							) : (
+								<div className="brand-card__monogram">PS</div>
+							)}
+						</Link>
+					))}
+				</div>
+				<div className="brand-dots" aria-hidden="true">
+					<b />
+					<i />
+					<i />
+					<i />
+					<i />
+				</div>
+			</section>
+
+			<section className="mega-section mega-container mega-essentials-section">
+				<SectionHeading>
+					Daily <span>Essentials</span>
+				</SectionHeading>
+				<div className="essentials-grid">
+					{essentials.map((product) => (
+						<Link
+							key={product._id}
+							to="/product/$id"
+							params={{ id: product._id }}
+							className="essential-card"
+						>
+							<span>
+								{product.imageUrl ? (
+									<img src={product.imageUrl} alt="" loading="lazy" />
+								) : (
+									<b>PS</b>
+								)}
+							</span>
+							<small>{product.name}</small>
+							<strong>Best price today</strong>
+						</Link>
+					))}
 				</div>
 			</section>
 		</>

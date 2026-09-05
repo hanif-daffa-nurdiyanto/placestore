@@ -50,6 +50,18 @@ async function requireShopOwnedByUser(ctx: Ctx, shopId: Id<"shops">) {
   return { user, shop };
 }
 
+async function deleteStorageFileBestEffort(
+  ctx: MutationCtx,
+  imageId: Id<"_storage">,
+) {
+  try {
+    await ctx.storage.delete(imageId);
+  } catch (error) {
+    // A stale storage reference must not roll back the primary database change.
+    console.warn(`Unable to delete storage file ${imageId}; continuing cleanup.`, error);
+  }
+}
+
 export const generateUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
@@ -205,14 +217,24 @@ export const getPublicById = query({
       ...product,
       imageUrls,
       shop: shop
-        ? { _id: shop._id, name: shop.name, slug: shop.slug, logoUrl: shopLogoUrl }
+        ? {
+            _id: shop._id,
+            name: shop.name,
+            slug: shop.slug,
+            description: shop.description,
+            address: shop.address,
+            logoUrl: shopLogoUrl,
+          }
         : null,
-      skus: skus.map((s) => ({
-        key: s.key,
-        options: s.options,
-        price: s.price,
-        stock: s.stock,
-      })),
+      skus: await Promise.all(
+        skus.map(async (s) => ({
+          key: s.key,
+          options: s.options,
+          price: s.price,
+          stock: s.stock,
+          imageUrl: s.imageId ? await ctx.storage.getUrl(s.imageId) : null,
+        })),
+      ),
       minSkuPrice,
       maxSkuPrice,
     };
@@ -425,7 +447,15 @@ export const remove = mutation({
     await Promise.all(existingSkus.map((s) => ctx.db.delete(s._id)));
 
     if (args.deleteImages) {
-      await Promise.all(existing.imageIds.map((id) => ctx.storage.delete(id)));
+      const imageIds = new Set<Id<"_storage">>([
+        ...existing.imageIds,
+        ...existingSkus.flatMap((sku) => (sku.imageId ? [sku.imageId] : [])),
+      ]);
+      await Promise.all(
+        Array.from(imageIds, (imageId) =>
+          deleteStorageFileBestEffort(ctx, imageId),
+        ),
+      );
     }
 
     return null;
@@ -476,7 +506,13 @@ export const listSkusByProduct = query({
       .withIndex("by_productId", (q) => q.eq("productId", args.productId))
       .collect();
 
-    return skus.sort((a, b) => a.key.localeCompare(b.key));
+    const sortedSkus = skus.sort((a, b) => a.key.localeCompare(b.key));
+    return await Promise.all(
+      sortedSkus.map(async (sku) => ({
+        ...sku,
+        imageUrl: sku.imageId ? await ctx.storage.getUrl(sku.imageId) : null,
+      })),
+    );
   },
 });
 
@@ -534,6 +570,13 @@ export const setProductVariants = mutation({
         .withIndex("by_productId", (q) => q.eq("productId", args.productId))
         .collect();
       await Promise.all(existingSkus.map((s) => ctx.db.delete(s._id)));
+      await Promise.all(
+        existingSkus.map(async (sku) => {
+          if (!sku.imageId) return;
+          const imageUrl = await ctx.storage.getUrl(sku.imageId);
+          if (imageUrl) await ctx.storage.delete(sku.imageId);
+        }),
+      );
     }
 
     return args.productId;
@@ -548,6 +591,7 @@ export const replaceSkusForProduct = mutation({
         options: v.array(v.object({ name: v.string(), value: v.string() })),
         price: v.number(),
         stock: v.number(),
+        imageId: v.optional(v.id("_storage")),
       }),
     ),
   },
@@ -622,6 +666,7 @@ export const replaceSkusForProduct = mutation({
         key: skuKeyFromOptions(orderedOptions),
         price: sku.price,
         stock: Math.floor(sku.stock),
+        imageId: sku.imageId,
       };
     });
 
@@ -640,6 +685,19 @@ export const replaceSkusForProduct = mutation({
       .collect();
     await Promise.all(existingSkus.map((s) => ctx.db.delete(s._id)));
 
+    const retainedImageIds = new Set(
+      normalizedSkus
+        .map((sku) => sku.imageId)
+        .filter((imageId): imageId is Id<"_storage"> => imageId !== undefined),
+    );
+    await Promise.all(
+      existingSkus.map(async (sku) => {
+        if (!sku.imageId || retainedImageIds.has(sku.imageId)) return;
+        const imageUrl = await ctx.storage.getUrl(sku.imageId);
+        if (imageUrl) await ctx.storage.delete(sku.imageId);
+      }),
+    );
+
     await Promise.all(
       normalizedSkus.map((sku) =>
         ctx.db.insert("productSkus", {
@@ -649,6 +707,7 @@ export const replaceSkusForProduct = mutation({
           options: sku.options,
           price: sku.price,
           stock: sku.stock,
+          imageId: sku.imageId,
           createdAt: now,
           updatedAt: now,
         }),
@@ -656,6 +715,40 @@ export const replaceSkusForProduct = mutation({
     );
 
     return args.productId;
+  },
+});
+
+export const setSkuImage = mutation({
+  args: {
+    productId: v.id("products"),
+    skuKey: v.string(),
+    imageId: v.union(v.id("_storage"), v.null()),
+  },
+  handler: async (ctx, args) => {
+    const product = await ctx.db.get(args.productId);
+    if (!product) throw new Error("Product not found");
+    await requireShopOwnedByUser(ctx, product.shopId);
+
+    const sku = await ctx.db
+      .query("productSkus")
+      .withIndex("by_productId_key", (q) =>
+        q.eq("productId", args.productId).eq("key", args.skuKey),
+      )
+      .unique();
+    if (!sku) throw new Error("SKU not found");
+
+    const previousImageId = sku.imageId;
+    await ctx.db.patch(sku._id, {
+      imageId: args.imageId ?? undefined,
+      updatedAt: Date.now(),
+    });
+
+    if (previousImageId && previousImageId !== args.imageId) {
+      const previousImageUrl = await ctx.storage.getUrl(previousImageId);
+      if (previousImageUrl) await ctx.storage.delete(previousImageId);
+    }
+
+    return args.imageId ? await ctx.storage.getUrl(args.imageId) : null;
   },
 });
 

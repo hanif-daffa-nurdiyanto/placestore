@@ -1,118 +1,91 @@
 import { Link } from "@tanstack/react-router";
-import { Github, Instagram, Mail } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 
 export function Footer() {
 	const year = new Date().getFullYear();
 	return (
-		<footer className="border-t bg-white">
-			<div className="container mx-auto grid gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
-				<div className="space-y-3">
-					<Link to="/" className="inline-flex items-center gap-2">
-						<span className="text-lg font-semibold tracking-tight">
-							Place Store
-						</span>
+		<footer className="mega-footer">
+			<div className="mega-container mega-footer-grid">
+				<div className="mega-footer-brand">
+					<Link to="/">
+						Place<span>Store</span>
 					</Link>
-					<p className="text-sm text-slate-600">
-						Discover your favorite products, checkout fast, and manage your shop in
-						one place.
+					<h3>Contact Us</h3>
+					<p>
+						<Phone />{" "}
+						<span>
+							Call Us
+							<br />
+							<strong>+62 812-3456-7890</strong>
+						</span>
+					</p>
+					<p>
+						<Mail />{" "}
+						<span>
+							Email Us
+							<br />
+							<strong>hello@placestore.local</strong>
+						</span>
 					</p>
 				</div>
-
-				<div className="space-y-3">
-					<p className="text-sm font-semibold">Explore</p>
-					<ul className="space-y-2 text-sm text-slate-600">
+				<div>
+					<h3>Most Popular Categories</h3>
+					<ul>
 						<li>
-							<Link to="/" className="hover:underline hover:underline-offset-4">
-								Home
-							</Link>
+							<Link to="/explore">All Products</Link>
 						</li>
 						<li>
-							<Link
-								to="/cart"
-								className="hover:underline hover:underline-offset-4"
-							>
-								Cart
-							</Link>
+							<Link to="/explore">New Arrivals</Link>
 						</li>
 						<li>
-							<Link
-								to="/user/account/profile"
-								className="hover:underline hover:underline-offset-4"
-							>
+							<Link to="/explore">Daily Essentials</Link>
+						</li>
+						<li>
+							<Link to="/explore">Top Deals</Link>
+						</li>
+						<li>
+							<Link to="/explore">Local Stores</Link>
+						</li>
+					</ul>
+				</div>
+				<div>
+					<h3>Customer Services</h3>
+					<ul>
+						<li>
+							<Link to="/">About Us</Link>
+						</li>
+						<li>
+							<Link to="/cart">Your Cart</Link>
+						</li>
+						<li>
+							<Link to="/user/account/profile" search={{ tab: "orders" }}>
 								My Orders
 							</Link>
 						</li>
-					</ul>
-				</div>
-
-				<div className="space-y-3">
-					<p className="text-sm font-semibold">Sellers</p>
-					<ul className="space-y-2 text-sm text-slate-600">
 						<li>
-							<Link
-								to="/shop/new"
-								className="hover:underline hover:underline-offset-4"
-							>
-								Create Shop
-							</Link>
+							<Link to="/shop/new">Start Selling</Link>
 						</li>
 						<li>
-							<Link
-								to="/shop/admin/dashboard"
-								className="hover:underline hover:underline-offset-4"
-							>
-								Shop Dashboard
-							</Link>
+							<a href="mailto:hello@placestore.local">Contact</a>
 						</li>
 					</ul>
 				</div>
-
-				<div className="space-y-3">
-					<p className="text-sm font-semibold">Contact</p>
-					<ul className="space-y-2 text-sm text-slate-600">
-						<li className="flex items-center gap-2">
-							<Mail className="h-4 w-4" />
-							<a
-								href="mailto:hello@placestore.local"
-								className="hover:underline hover:underline-offset-4"
-							>
-								hello@placestore.local
-							</a>
-						</li>
-						<li className="flex items-center gap-2">
-							<Instagram className="h-4 w-4" />
-							<a
-								href="#"
-								className="hover:underline hover:underline-offset-4"
-							>
-								Instagram
-							</a>
-						</li>
-						<li className="flex items-center gap-2">
-							<Github className="h-4 w-4" />
-							<a
-								href="#"
-								className="hover:underline hover:underline-offset-4"
-							>
-								GitHub
-							</a>
-						</li>
-					</ul>
+				<div className="mega-footer-note">
+					<MapPin />
+					<h3>
+						Shop local,
+						<br />
+						from anywhere.
+					</h3>
+					<p>Everything you need in one simple marketplace.</p>
 				</div>
 			</div>
-
-			<div className="border-t">
-				<div className="container mx-auto flex flex-col gap-2 px-4 py-6 text-xs text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-					<p>© {year} Place Store. All rights reserved.</p>
-					<div className="flex gap-4">
-						<a href="#" className="hover:underline hover:underline-offset-4">
-							Privacy
-						</a>
-						<a href="#" className="hover:underline hover:underline-offset-4">
-							Terms
-						</a>
-					</div>
-				</div>
+			<div className="mega-container mega-footer-bottom">
+				<p>© {year} Place Store. All rights reserved.</p>
+				<span>
+					<a href="#privacy">Privacy Policy</a>
+					<a href="#terms">Terms &amp; Conditions</a>
+				</span>
 			</div>
 		</footer>
 	);

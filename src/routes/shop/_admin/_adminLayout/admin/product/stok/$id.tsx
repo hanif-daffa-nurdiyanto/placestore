@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { Check, Trash, X } from "lucide-react";
+import { Check, ImagePlus, Loader2, Trash, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { uploadImage } from "#/lib/convex";
 import { api } from "../../../../../../../../convex/_generated/api";
 import type { Id } from "../../../../../../../../convex/_generated/dataModel";
 
@@ -11,6 +12,8 @@ type SkuRow = {
 	options: { name: string; value: string }[];
 	price: string;
 	stock: string;
+	imageId?: Id<"_storage">;
+	imageUrl?: string | null;
 };
 
 export const Route = createFileRoute(
@@ -43,6 +46,8 @@ function RouteComponent() {
 		product ? { productId } : "skip",
 	);
 	const save = useMutation(api.products.replaceSkusForProduct);
+	const generateUploadUrl = useMutation(api.products.generateUploadUrl);
+	const saveSkuImage = useMutation(api.products.setSkuImage);
 
 	const [rows, setRows] = useState<SkuRow[]>([]);
 	const [draftOptions, setDraftOptions] = useState<Record<string, string>>({});
@@ -50,9 +55,12 @@ function RouteComponent() {
 	const [draftStock, setDraftStock] = useState("0");
 	const [error, setError] = useState("");
 	const [savingKeys, setSavingKeys] = useState<Set<string>>(() => new Set());
-	const [dirtyByKey, setDirtyByKey] = useState<
-		Map<string, { price: string; stock: string } | null>
-	>(() => new Map());
+	const [imageBusyKeys, setImageBusyKeys] = useState<Set<string>>(
+		() => new Set(),
+	);
+	const [dirtyByKey, setDirtyByKey] = useState<Map<string, SkuRow | null>>(
+		() => new Map(),
+	);
 
 	const didInit = useRef(false);
 	useEffect(() => {
@@ -67,6 +75,8 @@ function RouteComponent() {
 				options: (s.options as { name: string; value: string }[]) ?? [],
 				price: String(s.price ?? 0),
 				stock: String(s.stock ?? 0),
+				imageId: s.imageId,
+				imageUrl: s.imageUrl,
 			})),
 		);
 	}, [product, existingSkus]);
@@ -95,7 +105,7 @@ function RouteComponent() {
 			}
 			if (snapshot) {
 				// Dirty edit: commit the last-saved values.
-				next.push({ ...row, price: snapshot.price, stock: snapshot.stock });
+				next.push(snapshot);
 				continue;
 			}
 
@@ -121,7 +131,12 @@ function RouteComponent() {
 				if (!Number.isFinite(stock) || stock < 0) {
 					throw new Error(`Invalid stock for ${r.key}`);
 				}
-				return { options: r.options, price, stock };
+				return {
+					options: r.options,
+					price,
+					stock,
+					...(r.imageId ? { imageId: r.imageId } : {}),
+				};
 			});
 
 			await save({ productId, skus: payloadSkus });
@@ -142,7 +157,10 @@ function RouteComponent() {
 		return ok;
 	};
 
-	const updateRow = (key: string, patch: Partial<Pick<SkuRow, "price" | "stock">>) => {
+	const updateRow = (
+		key: string,
+		patch: Partial<Pick<SkuRow, "price" | "stock">>,
+	) => {
 		setRows((prev) => {
 			const current = prev.find((r) => r.key === key);
 			const next = prev.map((r) => (r.key === key ? { ...r, ...patch } : r));
@@ -151,12 +169,60 @@ function RouteComponent() {
 			setDirtyByKey((prevDirty) => {
 				if (prevDirty.has(key)) return prevDirty;
 				const nextDirty = new Map(prevDirty);
-				nextDirty.set(key, { price: current.price, stock: current.stock });
+				nextDirty.set(key, { ...current });
 				return nextDirty;
 			});
 
 			return next;
 		});
+	};
+
+	const updateSkuImage = async (row: SkuRow, file: File | null) => {
+		setError("");
+		setImageBusyKeys((prev) => new Set(prev).add(row.key));
+
+		try {
+			const imageId = file
+				? await uploadImage({ file, generateUploadUrl })
+				: null;
+			const imageUrl = await saveSkuImage({
+				productId,
+				skuKey: row.key,
+				imageId,
+			});
+
+			setRows((prev) =>
+				prev.map((item) =>
+					item.key === row.key
+						? {
+								...item,
+								imageId: imageId ?? undefined,
+								imageUrl,
+							}
+						: item,
+				),
+			);
+			setDirtyByKey((prev) => {
+				const snapshot = prev.get(row.key);
+				if (!snapshot) return prev;
+				const next = new Map(prev);
+				next.set(row.key, {
+					...snapshot,
+					imageId: imageId ?? undefined,
+					imageUrl,
+				});
+				return next;
+			});
+		} catch (err) {
+			console.error(err);
+			setError(err instanceof Error ? err.message : "Failed to save SKU image");
+		} finally {
+			setImageBusyKeys((prev) => {
+				const next = new Set(prev);
+				next.delete(row.key);
+				return next;
+			});
+		}
 	};
 
 	const removeSku = (key: string) => {
@@ -321,8 +387,8 @@ function RouteComponent() {
 				{variants.length ? (
 					<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
 						{variants.map((variant) => (
-							<div key={variant.name}>
-								<label className="text-xs text-slate-500">{variant.name}</label>
+							<label key={variant.name} className="text-xs text-slate-500">
+								<span>{variant.name}</span>
 								<select
 									value={draftOptions[variant.name] ?? ""}
 									onChange={(e) =>
@@ -340,7 +406,7 @@ function RouteComponent() {
 										</option>
 									))}
 								</select>
-							</div>
+							</label>
 						))}
 					</div>
 				) : (
@@ -350,8 +416,8 @@ function RouteComponent() {
 				)}
 
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-					<div>
-						<label className="text-xs text-slate-500">Price</label>
+					<label className="text-xs text-slate-500">
+						<span>Price</span>
 						<input
 							inputMode="decimal"
 							type="number"
@@ -361,9 +427,9 @@ function RouteComponent() {
 							onChange={(e) => setDraftPrice(e.target.value)}
 							className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
 						/>
-					</div>
-					<div>
-						<label className="text-xs text-slate-500">Stock</label>
+					</label>
+					<label className="text-xs text-slate-500">
+						<span>Stock</span>
 						<input
 							inputMode="numeric"
 							type="number"
@@ -373,7 +439,7 @@ function RouteComponent() {
 							onChange={(e) => setDraftStock(e.target.value)}
 							className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
 						/>
-					</div>
+					</label>
 				</div>
 			</div>
 
@@ -395,6 +461,7 @@ function RouteComponent() {
 									</th>
 								))}
 								<th className="py-2 pr-4 font-medium">Price</th>
+								<th className="py-2 pr-4 font-medium">Image</th>
 								<th className="py-2 pr-4 font-medium">Stock</th>
 								<th className="py-2 pr-4 font-medium">Action</th>
 							</tr>
@@ -403,7 +470,8 @@ function RouteComponent() {
 							{rows.map((row) => (
 								<tr key={row.key} className="border-t">
 									{variantNames.map((name) => {
-										const v = row.options.find((o) => o.name === name)?.value ?? "-";
+										const v =
+											row.options.find((o) => o.name === name)?.value ?? "-";
 										return (
 											<td key={`${row.key}:${name}`} className="py-2 pr-4">
 												{v}
@@ -417,9 +485,73 @@ function RouteComponent() {
 											min={0}
 											step="0.01"
 											value={row.price}
-											onChange={(e) => updateRow(row.key, { price: e.target.value })}
+											onChange={(e) =>
+												updateRow(row.key, { price: e.target.value })
+											}
 											className="w-32 rounded-md border px-3 py-2"
 										/>
+									</td>
+									<td className="py-2 pr-4">
+										<div className="flex items-center gap-2">
+											<div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border bg-slate-50">
+												{row.imageUrl ? (
+													<img
+														src={row.imageUrl}
+														alt={`SKU ${row.key}`}
+														className="h-full w-full object-cover"
+													/>
+												) : (
+													<div className="grid h-full place-items-center text-slate-400">
+														<ImagePlus className="h-5 w-5" />
+													</div>
+												)}
+											</div>
+											<div className="flex items-center gap-1">
+												<label
+													className={`rounded-md border p-2 hover:bg-slate-50 ${
+														imageBusyKeys.has(row.key) ||
+														savingKeys.has(row.key)
+															? "cursor-not-allowed opacity-50"
+															: "cursor-pointer"
+													}`}
+												>
+													<span className="sr-only">Upload SKU image</span>
+													{imageBusyKeys.has(row.key) ? (
+														<Loader2 className="h-4 w-4 animate-spin" />
+													) : (
+														<ImagePlus className="h-4 w-4" />
+													)}
+													<input
+														type="file"
+														accept="image/*"
+														disabled={
+															imageBusyKeys.has(row.key) ||
+															savingKeys.has(row.key)
+														}
+														className="sr-only"
+														onChange={(event) => {
+															const file = event.target.files?.[0] ?? null;
+															if (file) void updateSkuImage(row, file);
+															event.target.value = "";
+														}}
+													/>
+												</label>
+												{row.imageId && (
+													<button
+														type="button"
+														aria-label="Remove SKU image"
+														disabled={
+															imageBusyKeys.has(row.key) ||
+															savingKeys.has(row.key)
+														}
+														onClick={() => void updateSkuImage(row, null)}
+														className="rounded-md border p-2 text-red-500 hover:bg-red-50 disabled:opacity-50"
+													>
+														<Trash className="h-4 w-4" />
+													</button>
+												)}
+											</div>
+										</div>
 									</td>
 									<td className="py-2 pr-4">
 										<input
@@ -428,7 +560,9 @@ function RouteComponent() {
 											min={0}
 											step="1"
 											value={row.stock}
-											onChange={(e) => updateRow(row.key, { stock: e.target.value })}
+											onChange={(e) =>
+												updateRow(row.key, { stock: e.target.value })
+											}
 											className="w-28 rounded-md border px-3 py-2"
 										/>
 									</td>
@@ -439,7 +573,10 @@ function RouteComponent() {
 													<button
 														type="button"
 														aria-label="Save SKU"
-														disabled={savingKeys.has(row.key)}
+														disabled={
+															savingKeys.has(row.key) ||
+															imageBusyKeys.has(row.key)
+														}
 														onClick={() => {
 															const nextRows = buildRowsForCommit(row.key);
 															void commitSave(nextRows, row.key).then((ok) => {
@@ -458,7 +595,10 @@ function RouteComponent() {
 													<button
 														type="button"
 														aria-label="Cancel changes"
-														disabled={savingKeys.has(row.key)}
+														disabled={
+															savingKeys.has(row.key) ||
+															imageBusyKeys.has(row.key)
+														}
 														onClick={() => {
 															const snapshot = dirtyByKey.get(row.key) ?? null;
 															setDirtyByKey((prevDirty) => {
@@ -471,9 +611,7 @@ function RouteComponent() {
 																	return prev.filter((r) => r.key !== row.key);
 																}
 																return prev.map((r) =>
-																	r.key === row.key
-																		? { ...r, price: snapshot.price, stock: snapshot.stock }
-																		: r,
+																	r.key === row.key ? snapshot : r,
 																);
 															});
 														}}
@@ -487,7 +625,9 @@ function RouteComponent() {
 											<button
 												type="button"
 												onClick={() => removeSku(row.key)}
-												disabled={savingKeys.has(row.key)}
+												disabled={
+													savingKeys.has(row.key) || imageBusyKeys.has(row.key)
+												}
 												className="rounded-md border p-2 cursor-pointer text-xs hover:bg-slate-50 disabled:opacity-50"
 											>
 												<Trash className="h-4 w-4" />

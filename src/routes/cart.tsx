@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { anyApi } from "convex/server";
+import { Minus, Plus } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Header } from "#/components/ui/Header";
 import { useCart } from "#/lib/cart";
@@ -20,9 +21,6 @@ function RouteComponent() {
 	const { items, setQuantity, removeItem, clear, totalItems, syncSku } =
 		useCart();
 
-	const [qtyWarningsById, setQtyWarningsById] = useState<Map<string, string>>(
-		() => new Map(),
-	);
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
 	const prevItemIdsRef = useRef<Set<string>>(new Set());
 
@@ -142,7 +140,7 @@ function RouteComponent() {
 		<div className="min-h-screen">
 			<Header />
 
-			<main className="container mx-auto py-10 space-y-6">
+			<main className="mega-container mx-auto py-10 space-y-6">
 				<div className="flex items-start justify-between gap-4">
 					<div className="space-y-1">
 						<h1 className="text-2xl font-semibold">Cart</h1>
@@ -290,45 +288,54 @@ function RouteComponent() {
 														</p>
 
 														<div className="flex items-center gap-2 pt-2">
-															<div className="space-y-1">
+															<fieldset className="product-quantity-stepper">
+																<legend className="sr-only">
+																	Quantity for {it.productName}
+																</legend>
+																<button
+																	type="button"
+																	onClick={() =>
+																		setQuantity(
+																			it.id,
+																			Math.max(1, it.quantity - 1),
+																		)
+																	}
+																	disabled={it.quantity <= 1}
+																	aria-label={`Decrease ${it.productName} quantity`}
+																>
+																	<Minus />
+																</button>
 																<input
 																	type="number"
 																	min={1}
 																	max={it.stock > 0 ? it.stock : 999}
 																	value={it.quantity}
-																	onChange={(e) => {
-																		const next = Number(e.target.value);
-																		if (
-																			Number.isFinite(next) &&
-																			it.stock > 0 &&
-																			next > it.stock
-																		) {
-																			setQtyWarningsById((prev) => {
-																				const copy = new Map(prev);
-																				copy.set(
-																					it.id,
-																					`Maksimal ${it.stock} (sesuai stock).`,
-																				);
-																				return copy;
-																			});
-																		} else {
-																			setQtyWarningsById((prev) => {
-																				if (!prev.has(it.id)) return prev;
-																				const copy = new Map(prev);
-																				copy.delete(it.id);
-																				return copy;
-																			});
-																		}
-																		setQuantity(it.id, next);
+																	onChange={(event) => {
+																		const next = Number(event.target.value);
+																		if (Number.isFinite(next))
+																			setQuantity(it.id, next);
 																	}}
-																	className="w-24 rounded-md border px-3 py-2 text-sm"
+																	aria-label={`Quantity for ${it.productName}`}
 																/>
-																{qtyWarningsById.get(it.id) && (
-																	<p className="text-xs text-red-600">
-																		{qtyWarningsById.get(it.id)}
-																	</p>
-																)}
-															</div>
+																<button
+																	type="button"
+																	onClick={() =>
+																		setQuantity(
+																			it.id,
+																			Math.min(
+																				Math.max(1, it.stock),
+																				it.quantity + 1,
+																			),
+																		)
+																	}
+																	disabled={
+																		it.stock <= 0 || it.quantity >= it.stock
+																	}
+																	aria-label={`Increase ${it.productName} quantity`}
+																>
+																	<Plus />
+																</button>
+															</fieldset>
 															<button
 																type="button"
 																onClick={() => {
@@ -393,7 +400,7 @@ function RouteComponent() {
 							</div>
 							<button
 								type="button"
-								className="w-full rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
+								className="product-checkout-button w-full"
 								disabled={selectedTotalItems === 0}
 								onClick={() => {
 									if (selectedTotalItems === 0) return;

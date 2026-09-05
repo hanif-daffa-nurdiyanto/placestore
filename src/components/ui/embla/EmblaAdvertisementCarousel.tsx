@@ -1,6 +1,6 @@
 import type { EmblaOptionsType } from "embla-carousel";
 import useEmblaCarousel from "embla-carousel-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "../../../css/embla.css";
 
 import {
@@ -80,7 +80,11 @@ export default function EmblaAdvertisementCarousel({
 
 	return (
 		<div
-			className={className ? `embla ${className}` : "embla"}
+			className={
+				className
+					? `embla advertisement-carousel ${className}`
+					: "embla advertisement-carousel"
+			}
 			style={
 				{
 					"--slide-size": "100%",
@@ -88,9 +92,9 @@ export default function EmblaAdvertisementCarousel({
 				} as React.CSSProperties
 			}
 		>
-			{/** biome-ignore lint/a11y/noStaticElementInteractions: <explanation> */}
+			{/** biome-ignore lint/a11y/noStaticElementInteractions: Pointer and focus events pause automatic slide rotation. */}
 			<div
-				className="embla__viewport relative group"
+				className="embla__viewport advertisement-carousel__viewport"
 				ref={emblaRef}
 				onMouseEnter={() => setIsHovering(true)}
 				onMouseLeave={() => setIsHovering(false)}
@@ -112,41 +116,36 @@ export default function EmblaAdvertisementCarousel({
 				</div>
 
 				{scrollSnaps.length > 1 && (
-					<div className="pointer-events-none absolute inset-0">
-						<div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-between px-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
-							<div className="pointer-events-auto">
-								<PrevButton
-									onClick={onPrevButtonClick}
-									disabled={prevBtnDisabled}
-									aria-label="Previous slide"
-								/>
-							</div>
-							<div className="pointer-events-auto">
-								<NextButton
-									onClick={onNextButtonClick}
-									disabled={nextBtnDisabled}
-									aria-label="Next slide"
-								/>
-							</div>
-						</div>
-
-						<div className="absolute left-1/2 bottom-2 -translate-x-1/2 opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
-							<div className="pointer-events-auto flex gap-2 rounded-full px-2 py-1">
-								{scrollSnaps.map((snap, index) => (
-									<DotButton
-										key={snap}
-										onClick={() => onDotButtonClick(index)}
-										aria-label={`Go to slide ${index + 1}`}
-										className={`h-2.5 w-2.5 rounded-full transition-colors ${
-											index === selectedIndex ? "bg-white" : "bg-white/50"
-										}`}
-									/>
-								))}
-							</div>
-						</div>
+					<div className="advertisement-carousel__dots">
+						{scrollSnaps.map((snap, index) => (
+							<DotButton
+								key={snap}
+								onClick={() => onDotButtonClick(index)}
+								aria-label={`Go to slide ${index + 1}`}
+								aria-current={index === selectedIndex ? "true" : undefined}
+								className={`advertisement-carousel__dot${
+									index === selectedIndex ? " is-active" : ""
+								}`}
+							/>
+						))}
 					</div>
 				)}
 			</div>
+
+			{scrollSnaps.length > 1 && (
+				<div className="advertisement-carousel__arrows">
+					<PrevButton
+						onClick={onPrevButtonClick}
+						disabled={prevBtnDisabled}
+						aria-label="Previous slide"
+					/>
+					<NextButton
+						onClick={onNextButtonClick}
+						disabled={nextBtnDisabled}
+						aria-label="Next slide"
+					/>
+				</div>
+			)}
 		</div>
 	);
 }
@@ -158,25 +157,11 @@ function AdvertisementSlideItem({
 	slide: AdvertisementSlide;
 	isPriority: boolean;
 }) {
-	const [aspectRatio, setAspectRatio] = useState<number | null>(null);
-
-	const onImageLoad = useCallback(
-		(event: React.SyntheticEvent<HTMLImageElement>) => {
-			const img = event.currentTarget;
-			if (!img.naturalWidth || !img.naturalHeight) return;
-			setAspectRatio(img.naturalWidth / img.naturalHeight);
-		},
-		[],
-	);
-
 	return (
 		<div className="embla__slide flex justify-center">
 			<a
 				href={slide.url}
-				className="inline-block overflow-hidden border bg-slate-50 h-[220px] sm:h-[280px] md:h-[320px] w-[100vw] max-w-none"
-				style={
-					aspectRatio ? ({ aspectRatio } as React.CSSProperties) : undefined
-				}
+				className="advertisement-carousel__slide-link"
 				target={slide.url.startsWith("http") ? "_blank" : undefined}
 				rel={slide.url.startsWith("http") ? "noreferrer" : undefined}
 			>
@@ -186,8 +171,7 @@ function AdvertisementSlideItem({
 					loading={isPriority ? "eager" : "lazy"}
 					fetchPriority={isPriority ? "high" : "auto"}
 					decoding="async"
-					onLoad={onImageLoad}
-					className="block h-full w-full object-cover"
+					className="advertisement-carousel__image"
 				/>
 			</a>
 		</div>

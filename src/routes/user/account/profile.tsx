@@ -56,7 +56,7 @@ function ProfilePage() {
 	const { tab } = Route.useSearch();
 
 	return (
-		<div className="container mx-auto px-4 py-8 space-y-6">
+		<div className="mega-container mx-auto py-8 space-y-6">
 			<div className="flex items-center justify-between gap-3">
 				<div>
 					<h1 className="text-2xl font-semibold">Account</h1>

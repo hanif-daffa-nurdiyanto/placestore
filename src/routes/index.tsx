@@ -1,20 +1,18 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, BadgePercent, ShieldCheck, Truck } from "lucide-react";
 import EmblaAdvertisementCarousel from "#/components/ui/embla/EmblaAdvertisementCarousel";
 import { Header } from "#/components/ui/Header";
 import LandingChatbot from "#/components/ui/LandingChatbot";
 import { pageTitle } from "#/lib/seo";
-import { HomeCategories } from "#/section/HomeCategories";
 import ProductsHome from "#/section/ProductsHome";
 import { api } from "../../convex/_generated/api";
 
 export const Route = createFileRoute("/")({
 	head: ({ loaderData }) => {
 		const firstAdImage =
-			loaderData?.ads?.find((a) => typeof a.imageUrl === "string" && a.imageUrl)
-				?.imageUrl ?? null;
-
+			loaderData?.ads?.find(
+				(ad) => typeof ad.imageUrl === "string" && ad.imageUrl,
+			)?.imageUrl ?? null;
 		return {
 			meta: [{ title: pageTitle("Home") }],
 			links: firstAdImage
@@ -31,67 +29,80 @@ export const Route = createFileRoute("/")({
 	},
 	component: Home,
 	loader: async ({ context }) => {
-		const products = await context.convexClient.query(
-			api.products.listPublic,
-			{},
-		);
-		const ads = await context.convexClient.query(api.advertisements.listActive, {});
-
+		const [products, ads] = await Promise.all([
+			context.convexClient.query(api.products.listPublic, {}),
+			context.convexClient.query(api.advertisements.listActive, {}),
+		]);
 		return { products, ads };
 	},
 });
 
 function Home() {
 	const { products, ads } = Route.useLoaderData();
+	const slides = ads
+		.filter((ad) => typeof ad.imageUrl === "string" && ad.imageUrl)
+		.map((ad) => ({
+			id: ad._id,
+			label: ad.label,
+			imageUrl: ad.imageUrl as string,
+			url: ad.url,
+		}));
 
 	return (
-		<div className="min-h-screen" dir="ltr">
+		<div className="min-h-screen bg-white" dir="ltr">
 			<Header />
-
-			<main className="mx-auto space-y-6 pb-20">
-				{/* ── Hero Carousel ── */}
-				<section className="">
-					{ads && ads.length > 0 ? (
-						<div className="">
-							<EmblaAdvertisementCarousel
-								slides={ads
-									.filter((a) => typeof a.imageUrl === "string" && a.imageUrl)
-									.map((a) => ({
-										id: a._id,
-										label: a.label,
-										imageUrl: a.imageUrl as string,
-										url: a.url,
-									}))}
-								options={{ loop: true }}
-							/>
-						</div>
+			<main>
+				<section className="mega-hero mega-container">
+					{slides.length > 0 ? (
+						<EmblaAdvertisementCarousel
+							slides={slides}
+							options={{ loop: true }}
+						/>
 					) : (
 						<div className="home-fallback-hero">
-							<div className="relative z-10 container mx-auto py-12 sm:px-14 sm:py-12 space-y-5">
-								<p className="island-kicker">Welcome to Place Store</p>
-								<h2 className="text-3xl sm:text-4xl font-bold text-white leading-tight display-title">
-									Discover Amazing Products
-								</h2>
-								<p className="text-white/80 text-base sm:text-lg leading-relaxed max-w-md">
-									Shop the latest from local sellers. Fast checkout, reliable
-									delivery, all in one place.
+							<div className="hero-copy">
+								<p>Best Deal Online</p>
+								<h1>
+									Everyday finds.
+									<br />
+									<span>Exceptional prices.</span>
+								</h1>
+								<p>
+									Discover products from trusted local sellers, delivered
+									straight to your door.
 								</p>
-								<Link to="/explore" className="home-cta mt-2">
-									Start Shopping
-									<ArrowRight className="h-4 w-4" />
+								<Link to="/explore">
+									Shop Now <ArrowRight />
 								</Link>
+							</div>
+							<div className="hero-art" aria-hidden="true">
+								<span>50%</span>
+								<b>OFF</b>
 							</div>
 						</div>
 					)}
 				</section>
 
-				{/* ── Category Strip ── */}
-				<HomeCategories />
+				<div className="benefit-bar mega-container">
+					<span>
+						<Truck />
+						<b>Free delivery</b>
+						<small>On selected orders</small>
+					</span>
+					<span>
+						<ShieldCheck />
+						<b>Secure payment</b>
+						<small>100% protected checkout</small>
+					</span>
+					<span>
+						<BadgePercent />
+						<b>Daily offers</b>
+						<small>Fresh deals every day</small>
+					</span>
+				</div>
 
-				{/* ── Featured Products ── */}
 				<ProductsHome products={products} />
 			</main>
-
 			<LandingChatbot />
 		</div>
 	);

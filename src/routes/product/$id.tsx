@@ -1,5 +1,3 @@
-/** biome-ignore-all lint/suspicious/noArrayIndexKey: <explanation> */
-/** biome-ignore-all lint/a11y/useButtonType: <explanation> */
 import { useSuspenseQuery } from "@tanstack/react-query";
 import {
 	createFileRoute,
@@ -9,8 +7,19 @@ import {
 } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import useEmblaCarousel from "embla-carousel-react";
-import { ChevronDown, ChevronUp, ShoppingCart, Star } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+	AlertTriangle,
+	ArrowRight,
+	ChevronDown,
+	ChevronUp,
+	MapPin,
+	Minus,
+	Plus,
+	ShoppingCart,
+	Star,
+	Store,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Header } from "#/components/ui/Header";
 import { useCart } from "#/lib/cart";
@@ -44,6 +53,7 @@ type PublicSku = {
 	options: { name: string; value: string }[];
 	price: number;
 	stock: number;
+	imageUrl?: string | null;
 };
 
 function cleanVariants(input: VariantDef[]) {
@@ -67,6 +77,9 @@ function RouteComponent() {
 	const reviews = useQuery(api.reviews.listByProduct, { productId, limit: 10 });
 
 	const [isDetailOpen, setIsDetailOpen] = useState(false);
+	const [selectedSkuImageUrl, setSelectedSkuImageUrl] = useState<string | null>(
+		null,
+	);
 
 	const productQuery = convexQueryClient.queryOptions(
 		api.products.getPublicById,
@@ -87,7 +100,7 @@ function RouteComponent() {
 
 	if (!product) {
 		return (
-			<div className="container mx-auto py-10 space-y-4">
+			<div className="mega-container mx-auto py-10 space-y-4">
 				<p className="text-sm text-slate-500">Product not found.</p>
 				<Link to="/" className="underline text-sm">
 					Back
@@ -102,20 +115,41 @@ function RouteComponent() {
 	);
 	const skus = ((product.skus as PublicSku[] | undefined) ??
 		[]) satisfies PublicSku[];
+	const productImageUrls = (product.imageUrls ?? []).filter(
+		(url): url is string => typeof url === "string" && url.length > 0,
+	);
+	const skuImageUrls = Array.from(
+		new Set(
+			skus
+				.map((sku) => sku.imageUrl)
+				.filter(
+					(imageUrl): imageUrl is string =>
+						typeof imageUrl === "string" && imageUrl.length > 0,
+				),
+		),
+	);
+	const allImageUrls = Array.from(
+		new Set([...productImageUrls, ...skuImageUrls]),
+	);
+	const galleryImageUrls = selectedSkuImageUrl
+		? [
+				selectedSkuImageUrl,
+				...allImageUrls.filter((url) => url !== selectedSkuImageUrl),
+			]
+		: allImageUrls;
 
 	return (
 		<>
 			<Header />
 
-			<div className="container mx-auto px-4 py-8">
+			<div className="mega-container mx-auto py-8">
 				<div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
 					<section className="space-y-4 lg:col-span-5">
 						<div className="rounded-2xl bg-white overflow-hidden">
 							<ProductImageGallery
+								key={selectedSkuImageUrl ?? "product-images"}
 								productName={product.name}
-								imageUrls={(product.imageUrls ?? []).filter(
-									(u): u is string => typeof u === "string" && u.length > 0,
-								)}
+								imageUrls={galleryImageUrls}
 							/>
 						</div>
 					</section>
@@ -129,53 +163,74 @@ function RouteComponent() {
 								<ProductMeta
 									productId={productId}
 									productName={product.name}
-									imageUrl={product.imageUrls?.[0] ?? null}
+									imageUrl={productImageUrls[0] ?? null}
 									shop={product.shop}
 									basePrice={product.basePrice}
 									variants={variants}
 									skus={skus}
 									minSkuPrice={product.minSkuPrice}
 									maxSkuPrice={product.maxSkuPrice}
+									onSkuImageChange={setSelectedSkuImageUrl}
 								/>
 							</div>
 						</div>
 					</aside>
 
+					{product.shop && (
+						<section className="product-shop-card col-span-12">
+							<div className="product-shop-card__identity">
+								{product.shop.logoUrl ? (
+									<img
+										src={product.shop.logoUrl}
+										alt={`${product.shop.name} logo`}
+										loading="lazy"
+									/>
+								) : (
+									<span
+										className="product-shop-card__fallback"
+										aria-hidden="true"
+									>
+										<Store />
+									</span>
+								)}
+
+								<div className="product-shop-card__copy">
+									<small>Sold by</small>
+									<h2>{product.shop.name}</h2>
+									{product.shop.description && (
+										<p>{product.shop.description}</p>
+									)}
+									{product.shop.address && (
+										<span>
+											<MapPin />
+											{product.shop.address}
+										</span>
+									)}
+								</div>
+							</div>
+
+							<Link
+								to="/shop/$slug"
+								params={{ slug: product.shop.slug }}
+								className="product-shop-card__link"
+							>
+								Visit Store <ArrowRight />
+							</Link>
+						</section>
+					)}
+
 					<div className="rounded-2xl border bg-white p-5 space-y-3 col-span-12">
 						<div className="">
 							<button
+								type="button"
 								className="flex items-center justify-between cursor-pointer w-full"
 								onClick={() => setIsDetailOpen((v) => !v)}
 							>
 								<h2 className="text-lg font-semibold">Details</h2>
-								{/** biome-ignore lint/a11y/useButtonType: <explanation> */}
 								<div className="">
 									{isDetailOpen ? <ChevronUp /> : <ChevronDown />}
 								</div>
 							</button>
-							{/* <div className="space-y-2">
-							{product.shop ? (
-								<div className="flex items-center gap-2">
-									{product.shop.logoUrl && (
-										<img
-											src={product.shop.logoUrl}
-											alt={`${product.shop.name} logo`}
-											className="h-7 w-7 rounded-full border object-cover bg-slate-50"
-											loading="lazy"
-										/>
-									)}
-									<Link
-										to="/shop/$slug"
-										params={{ slug: product.shop.slug }}
-										className="text-sm text-slate-600 hover:underline hover:underline-offset-4"
-									>
-										{product.shop.name}
-									</Link>
-								</div>
-							) : (
-								<p className="text-sm text-slate-500">Unknown shop</p>
-							)}
-						</div> */}
 							{isDetailOpen && (
 								<div className="my-8">
 									{product.description ? (
@@ -349,7 +404,7 @@ function ProductImageGallery(props: {
 			<div className="flex flex-wrap justify-center gap-2">
 				{imageUrls.map((src, index) => (
 					<button
-						key={`${src}:${index}`}
+						key={src}
 						type="button"
 						onClick={() => scrollTo(index)}
 						className={`h-16 w-16 overflow-hidden rounded-xl border bg-white transition ${
@@ -382,12 +437,15 @@ function ProductMeta(props: {
 		name: string;
 		slug: string;
 		logoUrl?: string | null;
+		description?: string;
+		address?: string;
 	} | null;
 	basePrice?: number;
 	variants: VariantDef[];
 	skus: PublicSku[];
 	minSkuPrice?: number | null;
 	maxSkuPrice?: number | null;
+	onSkuImageChange: (imageUrl: string | null) => void;
 }) {
 	const navigate = useNavigate();
 	const { addItem } = useCart();
@@ -427,11 +485,19 @@ function ProductMeta(props: {
 		const first = inStockSkus[0];
 		return first ? selectionFromSku(first) : fallbackSelection;
 	});
+	const selectionDatasetKey = JSON.stringify({
+		productId: props.productId,
+		variants,
+		skuKeys: skus.map((sku) => sku.key),
+	});
+	const initializedSelectionKey = useRef<string | null>(null);
 
 	useEffect(() => {
+		if (initializedSelectionKey.current === selectionDatasetKey) return;
+		initializedSelectionKey.current = selectionDatasetKey;
 		const first = inStockSkus[0];
 		setSelected(first ? selectionFromSku(first) : fallbackSelection);
-	}, [fallbackSelection, inStockSkus, selectionFromSku]);
+	}, [fallbackSelection, inStockSkus, selectionDatasetKey, selectionFromSku]);
 
 	const selectedKey = useMemo(
 		() => selectionToKey(selected),
@@ -441,6 +507,10 @@ function ProductMeta(props: {
 		() => (selectedKey ? (skuByKey.get(selectedKey) ?? null) : null),
 		[selectedKey, skuByKey],
 	);
+
+	useEffect(() => {
+		props.onSkuImageChange(selectedSku?.imageUrl ?? null);
+	}, [props.onSkuImageChange, selectedSku?.imageUrl]);
 
 	const selectedOptions = useMemo(() => {
 		if (variants.length === 0) return [];
@@ -454,6 +524,12 @@ function ProductMeta(props: {
 	}, [selected, variants]);
 
 	const [qty, setQty] = useState(1);
+	useEffect(() => {
+		if (!selectedSku) return;
+		setQty((current) =>
+			Math.min(Math.max(1, selectedSku.stock), Math.max(1, current)),
+		);
+	}, [selectedSku]);
 
 	const rangeLabel = formatIDRRange(minSkuPrice, maxSkuPrice);
 	const currentPrice =
@@ -468,16 +544,7 @@ function ProductMeta(props: {
 		typeof currentPrice === "number" &&
 		basePrice > currentPrice;
 
-	const stockForValue = useMemo(() => {
-		return (variantName: string, value: string) => {
-			if (variants.length === 0) return 0;
-			const key = selectionToKey({ ...selected, [variantName]: value });
-			if (!key) return 0;
-			const sku = skuByKey.get(key);
-			if (!sku) return 0;
-			return sku.stock;
-		};
-	}, [selected, selectionToKey, skuByKey, variants.length]);
+	const selectionUnavailable = !selectedSku || selectedSku.stock <= 0;
 
 	return (
 		<div className="space-y-4">
@@ -503,16 +570,41 @@ function ProductMeta(props: {
 			</div>
 
 			<div className="flex flex-wrap items-center gap-2">
-				<div className="space-y-1">
+				<fieldset className="product-quantity-stepper">
+					<legend className="sr-only">Product quantity</legend>
+					<button
+						type="button"
+						onClick={() => setQty((current) => Math.max(1, current - 1))}
+						disabled={qty <= 1}
+						aria-label="Decrease quantity"
+					>
+						<Minus />
+					</button>
 					<input
 						type="number"
 						min={1}
 						max={selectedSku ? Math.max(1, selectedSku.stock) : 999}
 						value={qty}
-						onChange={(e) => setQty(Number(e.target.value))}
-						className="w-24 rounded-md border px-3 py-2 text-sm"
+						onChange={(event) => {
+							const next = Number(event.target.value);
+							if (!Number.isFinite(next)) return;
+							const max = selectedSku ? Math.max(1, selectedSku.stock) : 999;
+							setQty(Math.min(max, Math.max(1, Math.floor(next))));
+						}}
+						aria-label="Quantity"
 					/>
-				</div>
+					<button
+						type="button"
+						onClick={() => {
+							const max = selectedSku ? Math.max(1, selectedSku.stock) : 999;
+							setQty((current) => Math.min(max, current + 1));
+						}}
+						disabled={Boolean(selectedSku && qty >= selectedSku.stock)}
+						aria-label="Increase quantity"
+					>
+						<Plus />
+					</button>
+				</fieldset>
 
 				<button
 					type="button"
@@ -529,7 +621,7 @@ function ProductMeta(props: {
 						addItem({
 							productId: String(props.productId),
 							productName: props.productName,
-							imageUrl: props.imageUrl,
+							imageUrl: selectedSku.imageUrl ?? props.imageUrl,
 							shopId: props.shop ? String(props.shop._id) : null,
 							shopName: props.shop ? props.shop.name : null,
 							shopSlug: props.shop ? props.shop.slug : null,
@@ -542,7 +634,7 @@ function ProductMeta(props: {
 						});
 						toast.success("Added to cart");
 					}}
-					className="cursor-pointer rounded-md border px-4 py-2 text-sm disabled:opacity-50"
+					className="product-cart-button"
 				>
 					<ShoppingCart className="h-4 w-4" />
 				</button>
@@ -566,7 +658,7 @@ function ProductMeta(props: {
 						addItem({
 							productId,
 							productName: props.productName,
-							imageUrl: props.imageUrl,
+							imageUrl: selectedSku.imageUrl ?? props.imageUrl,
 							shopId: props.shop ? String(props.shop._id) : null,
 							shopName: props.shop ? props.shop.name : null,
 							shopSlug: props.shop ? props.shop.slug : null,
@@ -581,21 +673,25 @@ function ProductMeta(props: {
 						saveCheckoutSelection([cartItemId]);
 						navigate({ to: "/checkout" });
 					}}
-					className="cursor-pointer rounded-md bg-black px-4 py-2 text-sm text-white disabled:opacity-50"
+					className="product-checkout-button"
 				>
 					Checkout Now
 				</button>
-				{selectedSku && Number.isFinite(qty) && qty > selectedSku.stock && (
-					<p className="text-xs text-red-600">Max {selectedSku.stock}.</p>
-				)}
-				{!selectedSku ? (
-					<p className="text-xs text-slate-500">
-						Please select an available variant.
-					</p>
-				) : (
-					selectedSku.stock <= 0 && (
-						<p className="text-xs text-slate-500">Out of stock.</p>
-					)
+				{selectedSku &&
+					selectedSku.stock > 0 &&
+					Number.isFinite(qty) &&
+					qty > selectedSku.stock && (
+						<p className="text-xs text-red-600">Max {selectedSku.stock}.</p>
+					)}
+				{selectionUnavailable && (
+					<div className="product-stock-alert" role="alert">
+						<AlertTriangle />
+						<span>
+							<strong>This combination is unavailable.</strong>
+							Choose another variant combination to continue. All options remain
+							selectable.
+						</span>
+					</div>
 				)}
 			</div>
 
@@ -606,7 +702,6 @@ function ProductMeta(props: {
 							<p className="text-xs text-slate-500">{v.name}</p>
 							<div className="flex flex-wrap gap-2">
 								{v.values.map((value) => {
-									const stock = stockForValue(v.name, value);
 									const active = (selected[v.name] ?? "") === value;
 									return (
 										<button
@@ -615,13 +710,7 @@ function ProductMeta(props: {
 											onClick={() =>
 												setSelected((prev) => ({ ...prev, [v.name]: value }))
 											}
-											className={[
-												"px-3 py-1.5 rounded-md border text-sm transition",
-												active
-													? "bg-black text-white border-black"
-													: "bg-white",
-												stock > 0 ? "hover:border-black" : "opacity-60",
-											].join(" ")}
+											className={`product-variant-button${active ? " is-active" : ""}`}
 										>
 											<span className="flex items-center gap-2">
 												<span>{value}</span>

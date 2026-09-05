@@ -185,7 +185,10 @@ export const updateShop = mutation({
     await ctx.db.patch(args.shopId, patch);
 
     if (shouldDeleteOldLogo && shop.logoId) {
-      await ctx.storage.delete(shop.logoId);
+      const oldLogoUrl = await ctx.storage.getUrl(shop.logoId);
+      if (oldLogoUrl) {
+        await ctx.storage.delete(shop.logoId);
+      }
     }
 
     return args.shopId;
@@ -218,6 +221,10 @@ export const deleteShop = mutation({
           .collect();
         for (const sku of skus) {
           await ctx.db.delete(sku._id);
+          if (args.deleteProductImages && sku.imageId) {
+            const skuImageUrl = await ctx.storage.getUrl(sku.imageId);
+            if (skuImageUrl) await ctx.storage.delete(sku.imageId);
+          }
         }
 
         await ctx.db.delete(p._id);
@@ -228,7 +235,10 @@ export const deleteShop = mutation({
     }
 
     if (args.deleteLogo && shop.logoId) {
-      await ctx.storage.delete(shop.logoId);
+      const logoUrl = await ctx.storage.getUrl(shop.logoId);
+      if (logoUrl) {
+        await ctx.storage.delete(shop.logoId);
+      }
     }
 
     await ctx.db.delete(args.shopId);

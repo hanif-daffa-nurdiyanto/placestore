@@ -1,59 +1,90 @@
 import { Show, UserButton } from "@clerk/tanstack-react-start";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { CircleUserRound, Search, ShoppingCart, Store, Truck } from "lucide-react";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "convex/react";
+import {
+	BadgePercent,
+	ChevronDown,
+	CircleUserRound,
+	MapPin,
+	Menu,
+	Search,
+	ShoppingCart,
+	Store,
+	Truck,
+} from "lucide-react";
 import { useState } from "react";
 import { useCart } from "#/lib/cart";
+import { api } from "../../../convex/_generated/api";
 
 export const Header = () => {
 	const { totalItems } = useCart();
 	const navigate = useNavigate();
+	const location = useLocation();
+	const categories = useQuery(api.categories.listAll);
 	const [q, setQ] = useState("");
+	const locationSearch = location.search as { categoryId?: unknown };
+	const activeCategoryId =
+		location.pathname === "/explore" &&
+		typeof locationSearch.categoryId === "string"
+			? locationSearch.categoryId
+			: null;
+
+	const submitSearch = (event: React.FormEvent<HTMLFormElement>) => {
+		event.preventDefault();
+		const query = q.trim();
+		void navigate({ to: "/explore", search: query ? { q: query } : {} });
+	};
+
 	return (
-		<header className="flex flex-col border-b">
-			<div className="container mx-auto flex justify-between items-center py-3">
-				<div className="flex justify-between items-center flex-2">
-					<Link to="/">
-						<h1 className="text-xl font-semibold">Place Store</h1>
-					</Link>
-
-					<form
-						className="hidden md:flex items-center gap-2 w-full max-w-xl px-4 bg-blue-50 rounded-full"
-						onSubmit={(e) => {
-							e.preventDefault();
-							const query = q.trim();
-							void navigate({
-								to: "/explore",
-								search: query ? { q: query } : {},
-							});
-						}}
-					>
-						<input
-							value={q}
-							onChange={(e) => setQ(e.target.value)}
-							className="w-full  px-4 py-4 text-sm outline-none "
-							placeholder="Search products…"
-						/>
-						<button
-							type="submit"
-							className="cursor-pointer text-blue-500"
-						>
-							<Search className="w-6 h-6"/>
-						</button>
-					</form>
+		<header className="mega-header">
+			<div className="mega-topbar">
+				<div className="mega-container flex items-center justify-between">
+					<p>Welcome to worldwide Place Store!</p>
+					<div className="hidden items-center divide-x divide-slate-200 sm:flex">
+						<span>
+							<MapPin /> Deliver to <strong>423651</strong>
+						</span>
+						<span>
+							<Truck /> Track your order
+						</span>
+						<span>
+							<BadgePercent /> All Offers
+						</span>
+					</div>
 				</div>
+			</div>
 
-				<div className="flex gap-4 items-center flex-1 justify-end">
-					<Link to="/cart" className="relative cursor-pointer flex gap-3 rounded-full hover:bg-blue-200 px-4 py-2">
-						<ShoppingCart />Cart
-						{totalItems > 0 && (
-							<span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-blue-400 text-white text-[10px] leading-5 text-center">
-								{totalItems > 99 ? "99+" : totalItems}
-							</span>
-						)}
-					</Link>
+			<div className="mega-container mega-mainnav">
+				<Link to="/" className="mega-brand" aria-label="Place Store home">
+					<span className="mega-menu-mark">
+						<Menu />
+					</span>
+					<span>
+						Place<span>Store</span>
+					</span>
+				</Link>
+
+				<form className="mega-search" onSubmit={submitSearch}>
+					<Search aria-hidden="true" />
+					<input
+						value={q}
+						onChange={(event) => setQ(event.target.value)}
+						placeholder="Search essentials, groceries and more..."
+						aria-label="Search products"
+					/>
+					<button type="submit" aria-label="Submit search">
+						<Menu />
+					</button>
+				</form>
+
+				<nav className="mega-actions" aria-label="Account navigation">
 					<Show when="signed-in">
-						<Link to="/shop/admin/dashboard" className="p-2 text-black!">
-							<Store />
+						<Link
+							to="/shop/admin/dashboard"
+							className="mega-action"
+							aria-label="Shop dashboard"
+						>
+							<Store /> <span className="hidden xl:inline">My Shop</span>
 						</Link>
 						<UserButton>
 							<UserButton.MenuItems>
@@ -66,47 +97,61 @@ export const Header = () => {
 						</UserButton>
 					</Show>
 					<Show when="signed-out">
-						{/* <Link
-							to="/sign-in"
-							search={{ redirect_url: undefined }}
-							className="p-2"
-						>
-							<p className="text-sm cursor-pointer">Sign In</p>
-						</Link> */}
 						<Link
 							to="/sign-up"
 							search={{ redirect_url: undefined }}
-							className="cursor-pointer flex gap-3 rounded-full hover:bg-blue-200 px-4 py-2"
+							className="mega-action"
 						>
-							<CircleUserRound/>JoinUs 
+							<CircleUserRound /> <span>Sign Up/Sign In</span>
 						</Link>
 					</Show>
-				</div>
+					<Link to="/cart" className="mega-action mega-cart">
+						<ShoppingCart /> <span>Cart</span>
+						{totalItems > 0 && <b>{totalItems > 99 ? "99+" : totalItems}</b>}
+					</Link>
+				</nav>
 			</div>
-			<form
-					className="flex md:hidden items-center gap-2 w-full px-8 mb-4"
-					onSubmit={(e) => {
-						e.preventDefault();
-						const query = q.trim();
-						void navigate({
-							to: "/explore",
-							search: query ? { q: query } : {},
-						});
-					}}
-				>
+
+			<div className="mega-mobile-search">
+				<form className="mega-search" onSubmit={submitSearch}>
+					<Search aria-hidden="true" />
 					<input
 						value={q}
-						onChange={(e) => setQ(e.target.value)}
-						className="w-full rounded-l-xl border px-4 py-2 text-sm"
-						placeholder="Search products…"
+						onChange={(event) => setQ(event.target.value)}
+						placeholder="Search products..."
+						aria-label="Search products"
 					/>
-					<button
-						type="submit"
-						className="cursor-pointer rounded-r-xl bg-black px-4 py-2 text-sm text-white"
-					>
-						<Search />
+					<button type="submit" aria-label="Submit search">
+						<Menu />
 					</button>
-			</form>
+				</form>
+			</div>
+
+			{categories && categories.length > 0 && (
+				<nav className="mega-category-nav" aria-label="Product categories">
+					<div className="mega-container mega-category-row">
+						<Link
+							to="/explore"
+							className={`mega-category-pill${activeCategoryId ? "" : " is-active"}`}
+						>
+							All Categories <ChevronDown />
+						</Link>
+						{categories.slice(0, 8).map((category) => (
+							<Link
+								key={category._id}
+								to="/explore"
+								search={{ categoryId: category._id }}
+								className={`mega-category-pill${
+									activeCategoryId === String(category._id) ? " is-active" : ""
+								}`}
+							>
+								{category.name}
+								<ChevronDown />
+							</Link>
+						))}
+					</div>
+				</nav>
+			)}
 		</header>
 	);
 };

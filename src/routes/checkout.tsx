@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { anyApi } from "convex/server";
+import { Minus, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Header } from "#/components/ui/Header";
@@ -30,7 +31,7 @@ export const Route = createFileRoute("/checkout")({
 
 function CheckoutPage() {
 	const navigate = useNavigate();
-	const { items, removeItem, syncSku } = useCart();
+	const { items, removeItem, setQuantity, syncSku } = useCart();
 	const addresses = useQuery(api.addresses.listCurrentUserAddresses);
 	const checkout = useMutation(anyApi.transactions.checkout);
 
@@ -182,9 +183,9 @@ function CheckoutPage() {
 	}
 
 	return (
-		<div className="min-h-screen">
+		<div className="checkout-page min-h-screen bg-white">
 			<Header />
-			<main className="container mx-auto py-10 space-y-6">
+			<main className="mega-container mx-auto py-10 space-y-6">
 				<div className="flex items-start justify-between gap-4">
 					<div className="space-y-1">
 						<h1 className="text-2xl font-semibold">Checkout</h1>
@@ -205,19 +206,62 @@ function CheckoutPage() {
 									{grouped.map((g) => (
 										<div key={g.shopId ?? "unknown"} className="space-y-2">
 											<p className="text-sm font-semibold">{g.shopName}</p>
-											<div className="space-y-2">
+											<div className="space-y-3">
 												{g.items.map((it) => (
-													<div
-														key={it.id}
-														className="flex items-start justify-between gap-3 text-sm"
-													>
-														<p className="text-slate-700 line-clamp-2">
-															{it.productName}
-															<span className="font-bold text-green-600">
-																{it.quantity > 1 ? ` x ${it.quantity}` : ""}
-															</span>
-														</p>
-														<p className="font-medium shrink-0">
+													<div key={it.id} className="checkout-summary-item">
+														<div className="checkout-item-info">
+															<p>{it.productName}</p>
+															<small>{formatIDRMaybe(it.price)} each</small>
+														</div>
+														<fieldset className="product-quantity-stepper checkout-quantity-stepper">
+															<legend className="sr-only">
+																Quantity for {it.productName}
+															</legend>
+															<button
+																type="button"
+																onClick={() =>
+																	setQuantity(
+																		it.id,
+																		Math.max(1, it.quantity - 1),
+																	)
+																}
+																disabled={it.quantity <= 1}
+																aria-label={`Decrease ${it.productName} quantity`}
+															>
+																<Minus />
+															</button>
+															<input
+																type="number"
+																min={1}
+																max={Math.max(1, it.stock)}
+																value={it.quantity}
+																onChange={(event) => {
+																	const next = Number(event.target.value);
+																	if (Number.isFinite(next))
+																		setQuantity(it.id, next);
+																}}
+																aria-label={`Quantity for ${it.productName}`}
+															/>
+															<button
+																type="button"
+																onClick={() =>
+																	setQuantity(
+																		it.id,
+																		Math.min(
+																			Math.max(1, it.stock),
+																			it.quantity + 1,
+																		),
+																	)
+																}
+																disabled={
+																	it.stock <= 0 || it.quantity >= it.stock
+																}
+																aria-label={`Increase ${it.productName} quantity`}
+															>
+																<Plus />
+															</button>
+														</fieldset>
+														<p className="checkout-item-total">
 															{formatIDRMaybe(it.price * it.quantity) ?? "-"}
 														</p>
 													</div>
@@ -229,13 +273,16 @@ function CheckoutPage() {
 							)}
 						</div>
 
-							<div className="rounded-xl border p-4 space-y-3">
-								<p className="font-medium">Shipping address</p>
-								{addresses === undefined ? (
-									<p className="text-sm text-slate-500">Loading addresses...</p>
-								) : addresses.length === 0 ? (
-									<div className="text-sm text-slate-600 space-y-2">
-									<p>No address. Please add an address in My Account → My Addresses</p>
+						<div className="rounded-xl border p-4 space-y-3">
+							<p className="font-medium">Shipping address</p>
+							{addresses === undefined ? (
+								<p className="text-sm text-slate-500">Loading addresses...</p>
+							) : addresses.length === 0 ? (
+								<div className="text-sm text-slate-600 space-y-2">
+									<p>
+										No address. Please add an address in My Account → My
+										Addresses
+									</p>
 									<button
 										type="button"
 										className="rounded-md border px-3 py-2 text-sm hover:bg-slate-50"
@@ -245,11 +292,11 @@ function CheckoutPage() {
 												search: { tab: "addresses" },
 											})
 										}
-										>
-											Add address
-										</button>
-									</div>
-								) : (
+									>
+										Add address
+									</button>
+								</div>
+							) : (
 								<div className="space-y-3">
 									<div className="space-y-2">
 										{addresses.map((a) => (
@@ -267,12 +314,12 @@ function CheckoutPage() {
 												<div className="min-w-0">
 													<div className="flex items-center gap-2">
 														<p className="font-medium">{a.label}</p>
-															{a.isPrimary && (
-																<span className="text-xs rounded-full bg-black text-white px-2 py-0.5">
-																	Primary
-																</span>
-															)}
-														</div>
+														{a.isPrimary && (
+															<span className="checkout-primary-pill">
+																Primary
+															</span>
+														)}
+													</div>
 													<p className="text-sm text-slate-700">
 														{a.recipientName} • {a.phone}
 													</p>
@@ -285,9 +332,9 @@ function CheckoutPage() {
 							)}
 						</div>
 
-							<div className="rounded-xl border p-4 space-y-3">
-								<p className="font-medium">Shipping options</p>
-								<div className="space-y-2">
+						<div className="rounded-xl border p-4 space-y-3">
+							<p className="font-medium">Shipping options</p>
+							<div className="space-y-2">
 								<label className="flex items-center justify-between gap-3 rounded-xl border p-3 cursor-pointer">
 									<span className="flex items-center gap-2">
 										<input
@@ -316,15 +363,16 @@ function CheckoutPage() {
 										{formatIDRMaybe(20000) ?? "-"}
 									</span>
 								</label>
-								</div>
-								<p className="text-sm text-slate-600">
-									Estimated delivery: <span className="font-medium">{etaLabel}</span>
-								</p>
 							</div>
+							<p className="text-sm text-slate-600">
+								Estimated delivery:{" "}
+								<span className="font-medium">{etaLabel}</span>
+							</p>
+						</div>
 
-							<div className="rounded-xl border p-4 space-y-3">
-								<p className="font-medium">Payment method</p>
-								<div className="space-y-2">
+						<div className="rounded-xl border p-4 space-y-3">
+							<p className="font-medium">Payment method</p>
+							<div className="space-y-2">
 								<label className="flex items-center gap-2 rounded-xl border p-3 cursor-pointer">
 									<input
 										type="radio"
@@ -341,9 +389,7 @@ function CheckoutPage() {
 										checked={paymentMethod === "bank_transfer"}
 										onChange={() => setPaymentMethod("bank_transfer")}
 									/>
-									<span className="text-sm font-medium">
-										Bank Transfer
-									</span>
+									<span className="text-sm font-medium">Bank Transfer</span>
 								</label>
 								<label className="flex items-center gap-2 rounded-xl border p-3 cursor-pointer">
 									<input
@@ -361,24 +407,24 @@ function CheckoutPage() {
 					<div className="rounded-xl border p-4 space-y-3 h-fit">
 						<p className="font-medium">Total</p>
 						<div className="space-y-2 text-sm">
-								<div className="flex items-center justify-between gap-3">
-									<span className="text-slate-600">Subtotal</span>
+							<div className="flex items-center justify-between gap-3">
+								<span className="text-slate-600">Subtotal</span>
 								<span className="font-medium">
 									{formatIDRMaybe(subtotal) ?? "-"}
 								</span>
 							</div>
-								<div className="flex items-center justify-between gap-3">
-									<span className="text-slate-600">Shipping</span>
-									<span className="font-medium">
-										{formatIDRMaybe(shippingFee) ?? "-"}
-									</span>
-								</div>
-								<div className="flex items-center justify-between gap-3">
-									<span className="text-slate-600">Service fee</span>
-									<span className="font-medium">
-										{formatIDRMaybe(serviceFee) ?? "-"}
-									</span>
-								</div>
+							<div className="flex items-center justify-between gap-3">
+								<span className="text-slate-600">Shipping</span>
+								<span className="font-medium">
+									{formatIDRMaybe(shippingFee) ?? "-"}
+								</span>
+							</div>
+							<div className="flex items-center justify-between gap-3">
+								<span className="text-slate-600">Service fee</span>
+								<span className="font-medium">
+									{formatIDRMaybe(serviceFee) ?? "-"}
+								</span>
+							</div>
 							<hr />
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-slate-600">Total</span>
@@ -390,7 +436,7 @@ function CheckoutPage() {
 
 						<button
 							type="button"
-							className="w-full rounded-md bg-black px-4 py-2 text-white disabled:opacity-50"
+							className="product-checkout-button w-full"
 							disabled={!selectedItems.length || !selectedAddress}
 							onClick={async () => {
 								if (!selectedAddress) return;
@@ -406,27 +452,27 @@ function CheckoutPage() {
 										paymentMethod,
 									})) as { transactionIds?: string[] };
 
-										for (const it of selectedItems) removeItem(it.id);
-										clearCheckoutSelection();
-										toast.success(
-											`Checkout successful. Transactions created: ${result.transactionIds?.length ?? 0}`,
-										);
-										navigate({ to: "/cart" });
-									} catch (err) {
-										console.error(err);
-										toast.error(
-											err instanceof Error ? err.message : "Checkout failed",
-										);
-									}
-								}}
-							>
-								Checkout
-							</button>
-							{!selectedAddress && addresses && addresses.length > 0 && (
-								<p className="text-xs text-red-600">
-									Please select a shipping address first.
-								</p>
-							)}
+									for (const it of selectedItems) removeItem(it.id);
+									clearCheckoutSelection();
+									toast.success(
+										`Checkout successful. Transactions created: ${result.transactionIds?.length ?? 0}`,
+									);
+									navigate({ to: "/cart" });
+								} catch (err) {
+									console.error(err);
+									toast.error(
+										err instanceof Error ? err.message : "Checkout failed",
+									);
+								}
+							}}
+						>
+							Checkout
+						</button>
+						{!selectedAddress && addresses && addresses.length > 0 && (
+							<p className="text-xs text-red-600">
+								Please select a shipping address first.
+							</p>
+						)}
 					</div>
 				</div>
 			</main>

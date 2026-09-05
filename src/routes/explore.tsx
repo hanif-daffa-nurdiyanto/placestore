@@ -82,7 +82,7 @@ function ExplorePage() {
 		<div className="min-h-screen">
 			<Header />
 
-			<div className="container mx-auto py-10">
+			<div className="mega-container mx-auto py-10">
 				<div className="grid grid-cols-1 gap-6 md:grid-cols-[260px_1fr]">
 					<aside className="h-fit rounded-2xl border bg-white p-4 space-y-4">
 						<div>
