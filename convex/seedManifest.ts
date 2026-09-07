@@ -1,7 +1,8 @@
 export const SEED_CONFIG = {
   namespace: "placestore-demo-v1",
-  manifestVersion: "2",
+  manifestVersion: "3",
   productsPerCategory: 7,
+  reviewsPerProduct: 2,
   shopsPerUser: 1,
   randomSeed: 20260905,
 } as const;
@@ -41,6 +42,12 @@ export type SeedProduct = {
   imageQuery: string;
   variants: Array<{ name: string; values: string[] }>;
   skus: SeedSku[];
+  reviews: SeedReview[];
+};
+
+export type SeedReview = {
+  rating: number;
+  reviewText: string;
 };
 
 export const SEED_SHOPS: SeedShop[] = [
@@ -102,6 +109,25 @@ export const SEED_SHOPS: SeedShop[] = [
 
 type CompactSku = [values: string[], price: number, stock: number];
 
+const REVIEW_COMMENTS = [
+  (name: string) => `${name} sesuai deskripsi dan berfungsi dengan baik.`,
+  (name: string) => `Kualitas ${name} bagus, pengemasan juga rapi.`,
+  (name: string) => `${name} nyaman digunakan untuk kebutuhan sehari-hari.`,
+  (name: string) => `Produk ${name} tiba dengan kondisi baik dan layak dibeli.`,
+] as const;
+
+function buildReviews(name: string, seedKey: string): SeedReview[] {
+  const offset = Array.from(seedKey).reduce<number>(
+    (total, character) => total + character.charCodeAt(0),
+    Number(SEED_CONFIG.randomSeed),
+  );
+  const ratings = [5, 4, 5, 3] as const;
+  return Array.from({ length: SEED_CONFIG.reviewsPerProduct }, (_, index) => ({
+    rating: ratings[(offset + index) % ratings.length],
+    reviewText: REVIEW_COMMENTS[(offset + index) % REVIEW_COMMENTS.length](name),
+  }));
+}
+
 function product(
   categorySlug: string,
   seedKey: string,
@@ -128,6 +154,7 @@ function product(
     basePrice,
     imageQuery,
     variants,
+    reviews: buildReviews(name, `${categorySlug}-${seedKey}`),
     skus: compactSkus.map(([values, price, stock]) => {
       const options = variantNames.map((variantName, index) => ({
         name: variantName,

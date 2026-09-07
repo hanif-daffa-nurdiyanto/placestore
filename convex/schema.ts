@@ -231,6 +231,8 @@ export default defineSchema({
       v.literal("shop"),
       v.literal("product"),
       v.literal("sku"),
+      v.literal("transaction"),
+      v.literal("review"),
       v.literal("asset"),
     ),
     seedKey: v.string(),

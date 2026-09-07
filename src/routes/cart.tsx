@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Header } from "#/components/ui/Header";
 import { useCart } from "#/lib/cart";
 import { saveCheckoutSelection } from "#/lib/checkoutSelection";
-import { formatIDRMaybe } from "#/lib/money";
+import { formatUSDMaybe } from "#/lib/money";
 import { pageTitle } from "#/lib/seo";
 
 export const Route = createFileRoute("/cart")({
@@ -284,7 +284,7 @@ function RouteComponent() {
 															</p>
 														)}
 														<p className="text-sm font-semibold">
-															{formatIDRMaybe(it.price) ?? "-"}
+													{formatUSDMaybe(it.price) ?? "-"}
 														</p>
 
 														<div className="flex items-center gap-2 pt-2">
@@ -356,7 +356,7 @@ function RouteComponent() {
 
 													<div className="text-right">
 														<p className="text-sm font-semibold">
-															{formatIDRMaybe(it.price * it.quantity) ?? "-"}
+													{formatUSDMaybe(it.price * it.quantity) ?? "-"}
 														</p>
 													</div>
 												</div>
@@ -383,7 +383,7 @@ function RouteComponent() {
 												</span>
 											</p>
 											<p className="font-medium shrink-0">
-												{formatIDRMaybe(it.price * it.quantity) ?? "-"}
+											{formatUSDMaybe(it.price * it.quantity) ?? "-"}
 											</p>
 										</div>
 									))}
@@ -395,7 +395,7 @@ function RouteComponent() {
 							<div className="flex items-center justify-between text-sm">
 								<span className="text-slate-600">Total</span>
 								<span className="font-semibold">
-									{formatIDRMaybe(selectedTotalPrice) ?? "-"}
+									{formatUSDMaybe(selectedTotalPrice) ?? "-"}
 								</span>
 							</div>
 							<button

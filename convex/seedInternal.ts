@@ -10,10 +10,18 @@ const entityTypeValidator = v.union(
   v.literal("shop"),
   v.literal("product"),
   v.literal("sku"),
+  v.literal("transaction"),
+  v.literal("review"),
   v.literal("asset"),
 );
 
-type SeedEntityType = "shop" | "product" | "sku" | "asset";
+type SeedEntityType =
+  | "shop"
+  | "product"
+  | "sku"
+  | "transaction"
+  | "review"
+  | "asset";
 
 async function getSeedRecord(
   ctx: MutationCtx,
@@ -312,7 +320,11 @@ export const upsertProductBatch = internalMutation({
   },
   handler: async (ctx, args) => {
     const now = Date.now();
-    const productIds: Id<"products">[] = [];
+    const seededProducts: Array<{
+      seedKey: string;
+      productId: Id<"products">;
+      primarySkuId: Id<"productSkus">;
+    }> = [];
     for (const input of args.products) {
       const record = await getSeedRecord(
         ctx,
@@ -342,7 +354,6 @@ export const upsertProductBatch = internalMutation({
       } else {
         productId = await ctx.db.insert("products", { ...value, createdAt: now });
       }
-      productIds.push(productId);
       await upsertSeedRecord(ctx, {
         namespace: args.namespace,
         entityType: "product",
@@ -351,6 +362,7 @@ export const upsertProductBatch = internalMutation({
         checksum: input.checksum,
       });
 
+      let primarySkuId: Id<"productSkus"> | null = null;
       for (const sku of input.skus) {
         const existingSku = await ctx.db
           .query("productSkus")
@@ -371,6 +383,7 @@ export const upsertProductBatch = internalMutation({
         const skuId = existingSku
           ? (await ctx.db.patch(existingSku._id, skuValue), existingSku._id)
           : await ctx.db.insert("productSkus", { ...skuValue, createdAt: now });
+        primarySkuId ??= skuId;
         await upsertSeedRecord(ctx, {
           namespace: args.namespace,
           entityType: "sku",
@@ -379,8 +392,137 @@ export const upsertProductBatch = internalMutation({
           checksum: sku.checksum,
         });
       }
+      if (!primarySkuId) throw new Error(`Seed product has no SKU: ${input.seedKey}`);
+      seededProducts.push({ seedKey: input.seedKey, productId, primarySkuId });
     }
-    return productIds;
+    return seededProducts;
+  },
+});
+
+const reviewProductValidator = v.object({
+  seedKey: v.string(),
+  reviewSeedKey: v.string(),
+  reviewChecksum: v.string(),
+  productId: v.id("products"),
+  skuId: v.id("productSkus"),
+  skuKey: v.string(),
+  productName: v.string(),
+  options: v.array(optionValidator),
+  price: v.number(),
+  rating: v.number(),
+  reviewText: v.string(),
+});
+
+export const upsertReviewBatch = internalMutation({
+  args: {
+    namespace: v.string(),
+    transactionSeedKey: v.string(),
+    transactionChecksum: v.string(),
+    buyerUserId: v.id("users"),
+    shopId: v.id("shops"),
+    products: v.array(reviewProductValidator),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const subtotal = args.products.reduce(
+      (total, product) => total + Math.max(0, Math.floor(product.price)),
+      0,
+    );
+    const transactionValue = {
+      buyerUserId: args.buyerUserId,
+      shopId: args.shopId,
+      status: "received" as const,
+      items: args.products.map((product) => ({
+        productId: product.productId,
+        skuId: product.skuId,
+        skuKey: product.skuKey,
+        productName: product.productName,
+        options: product.options,
+        price: Math.max(0, Math.floor(product.price)),
+        quantity: 1,
+        lineTotal: Math.max(0, Math.floor(product.price)),
+      })),
+      addressSnapshot: {
+        label: "Alamat Seed",
+        recipientName: "Pembeli Demo",
+        phone: "080000000000",
+        address: "Alamat transaksi demo PlaceStore",
+      },
+      shippingMethod: "Reguler (Seed)",
+      shippingFee: 0,
+      paymentMethod: "Seed",
+      serviceFee: 0,
+      subtotal,
+      total: subtotal,
+      updatedAt: now,
+    };
+
+    const transactionRecord = await getSeedRecord(
+      ctx,
+      args.namespace,
+      "transaction",
+      args.transactionSeedKey,
+    );
+    const existingTransactionId = transactionRecord
+      ? ctx.db.normalizeId("transactions", transactionRecord.entityId)
+      : null;
+    const existingTransaction = existingTransactionId
+      ? await ctx.db.get(existingTransactionId)
+      : null;
+    const transactionId = existingTransaction
+      ? (await ctx.db.patch(existingTransaction._id, transactionValue),
+        existingTransaction._id)
+      : await ctx.db.insert("transactions", {
+          ...transactionValue,
+          createdAt: now,
+        });
+    await upsertSeedRecord(ctx, {
+      namespace: args.namespace,
+      entityType: "transaction",
+      seedKey: args.transactionSeedKey,
+      entityId: String(transactionId),
+      checksum: args.transactionChecksum,
+    });
+
+    let reviewsApplied = 0;
+    for (const product of args.products) {
+      const rating = Math.max(1, Math.min(5, Math.floor(product.rating)));
+      const reviewValue = {
+        buyerUserId: args.buyerUserId,
+        transactionId,
+        productId: product.productId,
+        shopId: args.shopId,
+        rating,
+        reviewText: product.reviewText.trim(),
+        imageIds: [],
+        updatedAt: now,
+      };
+      const reviewRecord = await getSeedRecord(
+        ctx,
+        args.namespace,
+        "review",
+        product.reviewSeedKey,
+      );
+      const existingReviewId = reviewRecord
+        ? ctx.db.normalizeId("reviews", reviewRecord.entityId)
+        : null;
+      const existingReview = existingReviewId
+        ? await ctx.db.get(existingReviewId)
+        : null;
+      const reviewId = existingReview
+        ? (await ctx.db.patch(existingReview._id, reviewValue), existingReview._id)
+        : await ctx.db.insert("reviews", { ...reviewValue, createdAt: now });
+      await upsertSeedRecord(ctx, {
+        namespace: args.namespace,
+        entityType: "review",
+        seedKey: product.reviewSeedKey,
+        entityId: String(reviewId),
+        checksum: product.reviewChecksum,
+      });
+      reviewsApplied += 1;
+    }
+
+    return { transactionId, reviewsApplied };
   },
 });
 
@@ -400,7 +542,13 @@ export const cleanupEntityBatch = internalMutation({
     let deleted = 0;
     let retained = 0;
     for (const record of records) {
-      if (args.entityType === "sku") {
+      if (args.entityType === "review") {
+        const id = ctx.db.normalizeId("reviews", record.entityId);
+        if (id && (await ctx.db.get(id))) await ctx.db.delete(id);
+      } else if (args.entityType === "transaction") {
+        const id = ctx.db.normalizeId("transactions", record.entityId);
+        if (id && (await ctx.db.get(id))) await ctx.db.delete(id);
+      } else if (args.entityType === "sku") {
         const id = ctx.db.normalizeId("productSkus", record.entityId);
         if (id && (await ctx.db.get(id))) await ctx.db.delete(id);
       } else if (args.entityType === "product") {

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { anyApi } from "convex/server";
 import { api } from "../../../../../../convex/_generated/api";
-import { formatIDRMaybe, formatIDRRange } from "#/lib/money";
+import { formatUSDMaybe, formatUSDRange } from "#/lib/money";
 import { useActiveShop } from "../../../../../lib/useActiveShop";
 
 export const Route = createFileRoute(
@@ -34,8 +34,8 @@ function RouteComponent() {
 		  }
 		| undefined;
 
-	const priceRangeLabel = formatIDRRange(stats?.minSkuPrice, stats?.maxSkuPrice);
-	const inventoryValueLabel = formatIDRMaybe(stats?.inventoryValue ?? null);
+	const priceRangeLabel = formatUSDRange(stats?.minSkuPrice, stats?.maxSkuPrice);
+	const inventoryValueLabel = formatUSDMaybe(stats?.inventoryValue ?? null);
 
 	return (
 		<div className="space-y-6 py-6">

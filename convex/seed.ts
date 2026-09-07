@@ -245,7 +245,10 @@ function assignShopsToUsers(result: InspectResult) {
 }
 
 function validateInspection(result: InspectResult) {
-  const minimumUsers = Math.ceil(SEED_SHOPS.length / 2);
+  const minimumUsers = Math.max(
+    Math.ceil(SEED_SHOPS.length / 2),
+    SEED_CONFIG.reviewsPerProduct + 1,
+  );
   if (result.users.length < minimumUsers) {
     throw new Error(
       `At least ${minimumUsers} seed users are required for ${SEED_SHOPS.length} shops, found ${result.users.length}`,
@@ -266,6 +269,14 @@ function buildPreview(result: InspectResult) {
     manifestVersion: SEED_CONFIG.manifestVersion,
     users: result.users.length,
     shopsPlanned: SEED_SHOPS.length,
+    reviewsPerProduct: SEED_CONFIG.reviewsPerProduct,
+    reviewsPlanned: result.categories.reduce(
+      (total, category) =>
+        total +
+        Math.max(0, SEED_CONFIG.productsPerCategory - category.nonSeedProducts) *
+          SEED_CONFIG.reviewsPerProduct,
+      0,
+    ),
     categories: result.categories.map((category) => ({
       slug: category.slug,
       currentTotal: category.totalProducts,
@@ -313,6 +324,8 @@ async function applySeed(ctx: ActionCtx, inspection: InspectResult) {
 
   let productsApplied = 0;
   let skusApplied = 0;
+  let transactionsApplied = 0;
+  let reviewsApplied = 0;
   for (const shop of SEED_SHOPS) {
     const category = resolveCategory(inspection, shop.categorySlug);
     const shopId = shopIds.get(shop.seedKey);
@@ -324,6 +337,10 @@ async function applySeed(ctx: ActionCtx, inspection: InspectResult) {
     const selectedProducts = SEED_PRODUCTS.filter(
       (product) => product.categorySlug === shop.categorySlug,
     ).slice(0, targetCount);
+    const seededProducts = new Map<
+      string,
+      { productId: Id<"products">; primarySkuId: Id<"productSkus"> }
+    >();
 
     for (let offset = 0; offset < selectedProducts.length; offset += 5) {
       const batch = selectedProducts.slice(offset, offset + 5);
@@ -367,23 +384,106 @@ async function applySeed(ctx: ActionCtx, inspection: InspectResult) {
           };
         }),
       );
-      await ctx.runMutation(internal.seedInternal.upsertProductBatch, {
+      const upserted: Array<{
+        seedKey: string;
+        productId: Id<"products">;
+        primarySkuId: Id<"productSkus">;
+      }> = await ctx.runMutation(internal.seedInternal.upsertProductBatch, {
         namespace: SEED_CONFIG.namespace,
         shopId,
         categoryId: category._id,
         products: prepared,
       });
+      for (const item of upserted) {
+        seededProducts.set(item.seedKey, {
+          productId: item.productId,
+          primarySkuId: item.primarySkuId,
+        });
+      }
       productsApplied += prepared.length;
       skusApplied += prepared.reduce((total, item) => total + item.skus.length, 0);
     }
+
+    if (selectedProducts.length === 0) continue;
+
+    const shopOwnerId = shopAssignments.get(shop.seedKey);
+    const reviewers = inspection.users
+      .filter((user) => user._id !== shopOwnerId)
+      .slice(0, SEED_CONFIG.reviewsPerProduct);
+    if (reviewers.length < SEED_CONFIG.reviewsPerProduct) {
+      throw new Error(
+        `Not enough non-owner reviewers for ${shop.seedKey}; expected ${SEED_CONFIG.reviewsPerProduct}`,
+      );
+    }
+
+    for (let reviewIndex = 0; reviewIndex < reviewers.length; reviewIndex += 1) {
+      const reviewer = reviewers[reviewIndex];
+      const transactionSeedKey = `${shop.seedKey}:reviewer-${reviewIndex + 1}`;
+      const products = selectedProducts.map((product) => {
+        const seeded = seededProducts.get(product.seedKey);
+        const primarySku = product.skus[0];
+        const review = product.reviews[reviewIndex];
+        if (!seeded || !primarySku || !review) {
+          throw new Error(`Incomplete review seed data for ${product.seedKey}`);
+        }
+        const key = skuKey(primarySku.options);
+        const reviewSeedKey = `${product.seedKey}:review-${reviewIndex + 1}`;
+        return {
+          seedKey: product.seedKey,
+          reviewSeedKey,
+          reviewChecksum: checksum({
+            reviewSeedKey,
+            buyerUserId: reviewer._id,
+            ...review,
+          }),
+          productId: seeded.productId,
+          skuId: seeded.primarySkuId,
+          skuKey: key,
+          productName: product.name,
+          options: primarySku.options,
+          price: primarySku.price,
+          rating: review.rating,
+          reviewText: review.reviewText,
+        };
+      });
+      const result: { transactionId: Id<"transactions">; reviewsApplied: number } =
+        await ctx.runMutation(internal.seedInternal.upsertReviewBatch, {
+          namespace: SEED_CONFIG.namespace,
+          transactionSeedKey,
+          transactionChecksum: checksum({
+            transactionSeedKey,
+            buyerUserId: reviewer._id,
+            shopId,
+            products,
+          }),
+          buyerUserId: reviewer._id,
+          shopId,
+          products,
+        });
+      transactionsApplied += 1;
+      reviewsApplied += result.reviewsApplied;
+    }
   }
-  return { productsApplied, skusApplied, shopsApplied: shopIds.size };
+  return {
+    productsApplied,
+    skusApplied,
+    shopsApplied: shopIds.size,
+    transactionsApplied,
+    reviewsApplied,
+  };
 }
 
 async function cleanupSeed(ctx: ActionCtx) {
   const totals: Record<string, number> = {};
   let retainedShops = 0;
-  for (const entityType of ["sku", "product", "asset", "shop"] as const) {
+  for (const entityType of [
+    "review",
+    "transaction",
+    "sku",
+    "product",
+    "asset",
+    "shop",
+  ] as const) {
     let total = 0;
     for (let page = 0; page < 20; page += 1) {
       const result: { deleted: number; retained: number; hasMore: boolean } =

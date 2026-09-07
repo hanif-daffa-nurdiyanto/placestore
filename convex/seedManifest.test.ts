@@ -52,4 +52,17 @@ describe("seed manifest", () => {
       expect(product.skus.some((sku) => sku.stock > 0)).toBe(true);
     }
   });
+
+  it("defines deterministic reviews and ratings for every product", () => {
+    for (const product of SEED_PRODUCTS) {
+      expect(product.reviews).toHaveLength(SEED_CONFIG.reviewsPerProduct);
+      for (const review of product.reviews) {
+        expect(Number.isInteger(review.rating)).toBe(true);
+        expect(review.rating).toBeGreaterThanOrEqual(1);
+        expect(review.rating).toBeLessThanOrEqual(5);
+        expect(review.reviewText.trim().length).toBeGreaterThan(0);
+        expect(review.reviewText).toContain(product.name);
+      }
+    }
+  });
 });

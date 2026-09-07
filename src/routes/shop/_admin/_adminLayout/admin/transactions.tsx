@@ -2,7 +2,7 @@
 	import { createFileRoute } from "@tanstack/react-router";
 	import { useMutation, useQuery } from "convex/react";
 		import { StatusPill } from "#/components/ui/StatusPill";
-		import { formatIDR, formatIDRMaybe } from "#/lib/money";
+		import { formatUSD, formatUSDMaybe } from "#/lib/money";
 		import { useActiveShop } from "#/lib/useActiveShop";
 		import { formatDateTime } from "#/lib/utils";
 		import { api } from "../../../../../../convex/_generated/api";
@@ -94,7 +94,7 @@ export const Route = createFileRoute(
 									</p>
 								</div>
 								<p className="font-semibold">
-											{formatIDRMaybe(t.total) ?? "-"}
+											{formatUSDMaybe(t.total) ?? "-"}
 										</p>
 									</div>
 									<div className="flex flex-wrap gap-2">
@@ -175,12 +175,12 @@ export const Route = createFileRoute(
 													</span>
 													<span className="font-semibold">
 														{it.quantity > 1 &&
-															`${it.lineTotal > 0 && formatIDR(it.lineTotal)} x ${it.quantity}`}
+															`${it.lineTotal > 0 && formatUSD(it.lineTotal)} x ${it.quantity}`}
 													</span>
 												</div>
 											</p>
 											<p className="font-medium shrink-0">
-												{formatIDRMaybe(it.lineTotal) ?? "-"}
+												{formatUSDMaybe(it.lineTotal) ?? "-"}
 											</p>
 										</div>
 									))}
@@ -191,19 +191,19 @@ export const Route = createFileRoute(
 								<div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
 									<span className="text-slate-600">Subtotal</span>
 									<span className="font-medium">
-										{formatIDRMaybe(t.subtotal) ?? "-"}
+									{formatUSDMaybe(t.subtotal) ?? "-"}
 									</span>
 								</div>
 								<div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
 									<span className="text-slate-600">Shipping</span>
 									<span className="font-medium">
-										{formatIDRMaybe(t.shippingFee) ?? "-"}
+									{formatUSDMaybe(t.shippingFee) ?? "-"}
 									</span>
 								</div>
 								<div className="flex items-center justify-between gap-3 rounded-lg bg-slate-50 px-3 py-2">
 									<span className="text-slate-600">Service fee</span>
 									<span className="font-medium">
-										{formatIDRMaybe(t.serviceFee) ?? "-"}
+									{formatUSDMaybe(t.serviceFee) ?? "-"}
 									</span>
 								</div>
 								</div>

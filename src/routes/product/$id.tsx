@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { Header } from "#/components/ui/Header";
 import { useCart } from "#/lib/cart";
 import { saveCheckoutSelection } from "#/lib/checkoutSelection";
-import { formatIDRMaybe, formatIDRRange } from "#/lib/money";
+import { formatUSDMaybe, formatUSDRange } from "#/lib/money";
 import { pageTitle } from "#/lib/seo";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
@@ -527,7 +527,7 @@ function ProductMeta(props: {
 		);
 	}, [selectedSku]);
 
-	const rangeLabel = formatIDRRange(minSkuPrice, maxSkuPrice);
+	const rangeLabel = formatUSDRange(minSkuPrice, maxSkuPrice);
 	const currentPrice =
 		typeof selectedSku?.price === "number"
 			? selectedSku.price
@@ -548,11 +548,11 @@ function ProductMeta(props: {
 				{rangeLabel ? (
 					<div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
 						<p className="text-lg font-semibold">
-							{selectedSku ? formatIDRMaybe(selectedSku.price) : rangeLabel}
+							{selectedSku ? formatUSDMaybe(selectedSku.price) : rangeLabel}
 						</p>
 						{showStrike && (
 							<p className="text-sm text-slate-500 line-through">
-								{formatIDRMaybe(basePrice)}
+								{formatUSDMaybe(basePrice)}
 							</p>
 						)}
 					</div>

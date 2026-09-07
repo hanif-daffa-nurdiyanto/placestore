@@ -348,7 +348,7 @@ seedRuns: {
 
 seedRecords: {
   namespace: string;
-  entityType: "shop" | "product" | "sku" | "asset";
+  entityType: "shop" | "product" | "sku" | "transaction" | "review" | "asset";
   seedKey: string;
   entityId: string;
   checksum: string;
@@ -376,11 +376,13 @@ Seeder minimal mendukung:
 
 Mode `cleanup` harus menghapus dengan urutan:
 
-1. SKU seed.
-2. Produk seed.
-3. File Storage yang hanya dipakai seed.
-4. Toko seed yang tidak lagi mempunyai produk atau transaksi.
-5. `seedRecords` dan `seedRuns` terkait.
+1. Review seed.
+2. Transaksi seed.
+3. SKU seed.
+4. Produk seed.
+5. File Storage yang hanya dipakai seed.
+6. Toko seed yang tidak lagi mempunyai produk atau transaksi.
+7. `seedRecords` dan `seedRuns` terkait.
 
 Penghapusan storage harus bersifat best-effort. Storage ID yang sudah hilang tidak boleh menggagalkan cleanup database.
 
@@ -478,16 +480,16 @@ Seluruh rekomendasi berikut telah disetujui sebagai dasar implementasi:
 7. Seluruh gambar memakai sumber Pexels/Openverse tanpa generasi AI agar hemat token.
 8. Katalog menggunakan nama produk generik dan menghindari klaim merek nyata.
 9. Production hanya diizinkan dengan konfirmasi namespace eksplisit, secret, dan `ALLOW_SEED=true`; runner segera dinonaktifkan sesudah verifikasi.
-10. Transaksi dan review demo tidak termasuk seed katalog fase pertama dan akan direncanakan sebagai fase terpisah setelah katalog stabil.
+10. Setiap produk seed memiliki dua review deterministik. Seeder membuat transaksi `received` pendukung dari akun non-pemilik toko agar review tetap memenuhi relasi domain.
 
 ## Status implementasi
 
 Implementasi tersedia pada:
 
-- `convex/seedManifest.ts`: konfigurasi, enam toko, dan 42 produk deterministik.
-- `convex/seedInternal.ts`: inspect, asset registry, upsert batch, run tracking, dan cleanup.
-- `convex/seed.ts`: guard, dry-run, integrasi Pexels/Openverse, apply, repair, dan cleanup.
-- `convex/seedManifest.test.ts`: validasi jumlah kategori, produk, varian, SKU, key, harga, dan stok.
+- `convex/seedManifest.ts`: konfigurasi, enam toko, 42 produk, dan review deterministik.
+- `convex/seedInternal.ts`: inspect, asset registry, upsert produk/transaksi/review, run tracking, dan cleanup.
+- `convex/seed.ts`: guard, dry-run, integrasi Pexels/Openverse, apply/repair review, dan cleanup berurutan.
+- `convex/seedManifest.test.ts`: validasi jumlah kategori, produk, varian, SKU, review, rating, key, harga, dan stok.
 - `scripts/seed-cli.mjs`: wrapper CLI yang tidak menyimpan secret dalam repository.
 
 Environment development yang diperlukan:

@@ -10,7 +10,7 @@ import {
 	clearCheckoutSelection,
 	loadCheckoutSelection,
 } from "#/lib/checkoutSelection";
-import { formatIDRMaybe } from "#/lib/money";
+import { formatUSDMaybe } from "#/lib/money";
 import { pageTitle } from "#/lib/seo";
 import { api } from "../../convex/_generated/api";
 
@@ -211,7 +211,7 @@ function CheckoutPage() {
 													<div key={it.id} className="checkout-summary-item">
 														<div className="checkout-item-info">
 															<p>{it.productName}</p>
-															<small>{formatIDRMaybe(it.price)} each</small>
+													<small>{formatUSDMaybe(it.price)} each</small>
 														</div>
 														<fieldset className="product-quantity-stepper checkout-quantity-stepper">
 															<legend className="sr-only">
@@ -262,7 +262,7 @@ function CheckoutPage() {
 															</button>
 														</fieldset>
 														<p className="checkout-item-total">
-															{formatIDRMaybe(it.price * it.quantity) ?? "-"}
+													{formatUSDMaybe(it.price * it.quantity) ?? "-"}
 														</p>
 													</div>
 												))}
@@ -346,7 +346,7 @@ function CheckoutPage() {
 										<span className="text-sm font-medium">Regular</span>
 									</span>
 									<span className="text-sm text-slate-600">
-										{formatIDRMaybe(10000) ?? "-"}
+										{formatUSDMaybe(10000) ?? "-"}
 									</span>
 								</label>
 								<label className="flex items-center justify-between gap-3 rounded-xl border p-3 cursor-pointer">
@@ -360,7 +360,7 @@ function CheckoutPage() {
 										<span className="text-sm font-medium">Express</span>
 									</span>
 									<span className="text-sm text-slate-600">
-										{formatIDRMaybe(20000) ?? "-"}
+										{formatUSDMaybe(20000) ?? "-"}
 									</span>
 								</label>
 							</div>
@@ -410,26 +410,26 @@ function CheckoutPage() {
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-slate-600">Subtotal</span>
 								<span className="font-medium">
-									{formatIDRMaybe(subtotal) ?? "-"}
+									{formatUSDMaybe(subtotal) ?? "-"}
 								</span>
 							</div>
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-slate-600">Shipping</span>
 								<span className="font-medium">
-									{formatIDRMaybe(shippingFee) ?? "-"}
+									{formatUSDMaybe(shippingFee) ?? "-"}
 								</span>
 							</div>
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-slate-600">Service fee</span>
 								<span className="font-medium">
-									{formatIDRMaybe(serviceFee) ?? "-"}
+									{formatUSDMaybe(serviceFee) ?? "-"}
 								</span>
 							</div>
 							<hr />
 							<div className="flex items-center justify-between gap-3">
 								<span className="text-slate-600">Total</span>
 								<span className="font-semibold">
-									{formatIDRMaybe(total) ?? "-"}
+									{formatUSDMaybe(total) ?? "-"}
 								</span>
 							</div>
 						</div>

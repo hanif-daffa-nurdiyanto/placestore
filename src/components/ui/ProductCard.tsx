@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { formatIDRMaybe } from "#/lib/money";
+import { formatUSDMaybe } from "#/lib/money";
 import type { PublicProduct } from "#/section/ProductsHome";
 
 const ProductCard = ({ product }: { product: PublicProduct }) => {
@@ -37,12 +37,12 @@ const ProductCard = ({ product }: { product: PublicProduct }) => {
 			<div className="deal-card__body">
 				<h3>{product.name}</h3>
 				<div className="deal-price">
-					<strong>{formatIDRMaybe(currentPrice)}</strong>
-					{hasDiscount && <del>{formatIDRMaybe(originalPrice)}</del>}
+					<strong>{formatUSDMaybe(currentPrice)}</strong>
+					{hasDiscount && <del>{formatUSDMaybe(originalPrice)}</del>}
 				</div>
 				<p>
 					{hasDiscount
-						? `Save - ${formatIDRMaybe(originalPrice - currentPrice)}`
+						? `Save - ${formatUSDMaybe(originalPrice - currentPrice)}`
 						: (product.shop?.name ?? "Place Store")}
 				</p>
 			</div>
