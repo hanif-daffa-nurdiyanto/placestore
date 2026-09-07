@@ -1,4 +1,4 @@
-import { SignUp } from "@clerk/tanstack-react-start";
+import { SignIn } from "@clerk/tanstack-react-start";
 import { auth } from "@clerk/tanstack-react-start/server";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
@@ -7,9 +7,9 @@ import { pageTitle } from "#/lib/seo";
 const fetchWithCredentials: typeof fetch = (input, init) =>
 	fetch(input, { ...init, credentials: init?.credentials ?? "include" });
 
-export const Route = createFileRoute("/sign-up")({
+export const Route = createFileRoute("/sign-in/$")({
 	head: () => ({
-		meta: [{ title: pageTitle("Sign Up") }],
+		meta: [{ title: pageTitle("Sign In") }],
 	}),
 	validateSearch: (search: Record<string, unknown>) => {
 		const redirect_url =
@@ -17,12 +17,14 @@ export const Route = createFileRoute("/sign-up")({
 		return { redirect_url };
 	},
 	beforeLoad: async ({ search }) => {
-		const { isAuthenticated } = await authStateFn({ fetch: fetchWithCredentials });
+		const { isAuthenticated } = await authStateFn({
+			fetch: fetchWithCredentials,
+		});
 		if (isAuthenticated) {
 			throw redirect({ to: search.redirect_url ?? "/" });
 		}
 	},
-	component: RouteComponent,
+	component: Page,
 });
 
 const authStateFn = createServerFn({ method: "GET" }).handler(async () => {
@@ -30,13 +32,13 @@ const authStateFn = createServerFn({ method: "GET" }).handler(async () => {
 	return { isAuthenticated };
 });
 
-function RouteComponent() {
+function Page() {
 	return (
 		<div
 			className="h-screen flex container mx-auto justify-center items-center"
 			suppressHydrationWarning
 		>
-			<SignUp routing="path" path="/sign-up" signInUrl="/sign-in" />
+			<SignIn routing="path" signUpUrl="/sign-up" path="/sign-in" />
 		</div>
 	);
 }

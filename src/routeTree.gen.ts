@@ -9,13 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SignUpRouteImport } from './routes/sign-up'
-import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as ExploreRouteImport } from './routes/explore'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as SignUpSplatRouteImport } from './routes/sign-up.$'
+import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
 import { Route as ShopNewRouteImport } from './routes/shop/new'
 import { Route as ShopAdminRouteImport } from './routes/shop/_admin'
 import { Route as ShopSlugRouteImport } from './routes/shop/$slug'
@@ -35,16 +35,6 @@ import { Route as ShopAdminAdminLayoutAdminProductEditRouteImport } from './rout
 import { Route as ShopAdminAdminLayoutAdminProductVariantIdRouteImport } from './routes/shop/_admin/_adminLayout/admin/product/variant/$id'
 import { Route as ShopAdminAdminLayoutAdminProductStokIdRouteImport } from './routes/shop/_admin/_adminLayout/admin/product/stok/$id'
 
-const SignUpRoute = SignUpRouteImport.update({
-  id: '/sign-up',
-  path: '/sign-up',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SignInRoute = SignInRouteImport.update({
-  id: '/sign-in',
-  path: '/sign-in',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ExploreRoute = ExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
@@ -68,6 +58,16 @@ const AdminRoute = AdminRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpSplatRoute = SignUpSplatRouteImport.update({
+  id: '/sign-up/$',
+  path: '/sign-up/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInSplatRoute = SignInSplatRouteImport.update({
+  id: '/sign-in/$',
+  path: '/sign-in/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ShopNewRoute = ShopNewRouteImport.update({
@@ -176,12 +176,12 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/explore': typeof ExploreRoute
-  '/sign-in': typeof SignInRoute
-  '/sign-up': typeof SignUpRoute
   '/product/$id': typeof ProductIdRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop': typeof ShopAdminAdminLayoutRouteWithChildren
   '/shop/new': typeof ShopNewRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/sign-up/$': typeof SignUpSplatRoute
   '/admin/advertisements': typeof AdminAdminLayoutAdvertisementsRoute
   '/admin/categories': typeof AdminAdminLayoutCategoriesRoute
   '/admin/dashboard': typeof AdminAdminLayoutDashboardRoute
@@ -201,12 +201,12 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/explore': typeof ExploreRoute
-  '/sign-in': typeof SignInRoute
-  '/sign-up': typeof SignUpRoute
   '/product/$id': typeof ProductIdRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop': typeof ShopAdminAdminLayoutRouteWithChildren
   '/shop/new': typeof ShopNewRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/sign-up/$': typeof SignUpSplatRoute
   '/admin/advertisements': typeof AdminAdminLayoutAdvertisementsRoute
   '/admin/categories': typeof AdminAdminLayoutCategoriesRoute
   '/admin/dashboard': typeof AdminAdminLayoutDashboardRoute
@@ -227,13 +227,13 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/explore': typeof ExploreRoute
-  '/sign-in': typeof SignInRoute
-  '/sign-up': typeof SignUpRoute
   '/admin/_adminLayout': typeof AdminAdminLayoutRouteWithChildren
   '/product/$id': typeof ProductIdRoute
   '/shop/$slug': typeof ShopSlugRoute
   '/shop/_admin': typeof ShopAdminRouteWithChildren
   '/shop/new': typeof ShopNewRoute
+  '/sign-in/$': typeof SignInSplatRoute
+  '/sign-up/$': typeof SignUpSplatRoute
   '/admin/_adminLayout/advertisements': typeof AdminAdminLayoutAdvertisementsRoute
   '/admin/_adminLayout/categories': typeof AdminAdminLayoutCategoriesRoute
   '/admin/_adminLayout/dashboard': typeof AdminAdminLayoutDashboardRoute
@@ -256,12 +256,12 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/explore'
-    | '/sign-in'
-    | '/sign-up'
     | '/product/$id'
     | '/shop/$slug'
     | '/shop'
     | '/shop/new'
+    | '/sign-in/$'
+    | '/sign-up/$'
     | '/admin/advertisements'
     | '/admin/categories'
     | '/admin/dashboard'
@@ -281,12 +281,12 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/explore'
-    | '/sign-in'
-    | '/sign-up'
     | '/product/$id'
     | '/shop/$slug'
     | '/shop'
     | '/shop/new'
+    | '/sign-in/$'
+    | '/sign-up/$'
     | '/admin/advertisements'
     | '/admin/categories'
     | '/admin/dashboard'
@@ -306,13 +306,13 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/explore'
-    | '/sign-in'
-    | '/sign-up'
     | '/admin/_adminLayout'
     | '/product/$id'
     | '/shop/$slug'
     | '/shop/_admin'
     | '/shop/new'
+    | '/sign-in/$'
+    | '/sign-up/$'
     | '/admin/_adminLayout/advertisements'
     | '/admin/_adminLayout/categories'
     | '/admin/_adminLayout/dashboard'
@@ -334,31 +334,17 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   ExploreRoute: typeof ExploreRoute
-  SignInRoute: typeof SignInRoute
-  SignUpRoute: typeof SignUpRoute
   ProductIdRoute: typeof ProductIdRoute
   ShopSlugRoute: typeof ShopSlugRoute
   ShopAdminRoute: typeof ShopAdminRouteWithChildren
   ShopNewRoute: typeof ShopNewRoute
+  SignInSplatRoute: typeof SignInSplatRoute
+  SignUpSplatRoute: typeof SignUpSplatRoute
   UserAccountProfileRoute: typeof UserAccountProfileRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sign-up': {
-      id: '/sign-up'
-      path: '/sign-up'
-      fullPath: '/sign-up'
-      preLoaderRoute: typeof SignUpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sign-in': {
-      id: '/sign-in'
-      path: '/sign-in'
-      fullPath: '/sign-in'
-      preLoaderRoute: typeof SignInRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/explore': {
       id: '/explore'
       path: '/explore'
@@ -392,6 +378,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up/$': {
+      id: '/sign-up/$'
+      path: '/sign-up/$'
+      fullPath: '/sign-up/$'
+      preLoaderRoute: typeof SignUpSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in/$': {
+      id: '/sign-in/$'
+      path: '/sign-in/$'
+      fullPath: '/sign-in/$'
+      preLoaderRoute: typeof SignInSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/shop/new': {
@@ -599,12 +599,12 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   ExploreRoute: ExploreRoute,
-  SignInRoute: SignInRoute,
-  SignUpRoute: SignUpRoute,
   ProductIdRoute: ProductIdRoute,
   ShopSlugRoute: ShopSlugRoute,
   ShopAdminRoute: ShopAdminRouteWithChildren,
   ShopNewRoute: ShopNewRoute,
+  SignInSplatRoute: SignInSplatRoute,
+  SignUpSplatRoute: SignUpSplatRoute,
   UserAccountProfileRoute: UserAccountProfileRoute,
 }
 export const routeTree = rootRouteImport
