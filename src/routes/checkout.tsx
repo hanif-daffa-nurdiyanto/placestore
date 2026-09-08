@@ -1,4 +1,6 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { auth } from "@clerk/tanstack-react-start/server";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery } from "convex/react";
 import { anyApi } from "convex/server";
 import { Minus, Plus } from "lucide-react";
@@ -17,11 +19,30 @@ import { api } from "../../convex/_generated/api";
 type ShippingMethod = "regular" | "express";
 type PaymentMethod = "cod" | "bank_transfer" | "ewallet";
 
+const fetchWithCredentials: typeof fetch = (input, init) =>
+	fetch(input, { ...init, credentials: init?.credentials ?? "include" });
+
+const authStateFn = createServerFn({ method: "GET" }).handler(async () => {
+	const { isAuthenticated } = await auth();
+	return { isAuthenticated };
+});
+
 export const Route = createFileRoute("/checkout")({
 	head: () => ({
 		meta: [{ title: pageTitle("Checkout") }],
 	}),
-	beforeLoad: () => {
+	beforeLoad: async ({ location }) => {
+		const { isAuthenticated } = await authStateFn({
+			fetch: fetchWithCredentials,
+		});
+
+		if (!isAuthenticated) {
+			throw redirect({
+				to: "/sign-in",
+				search: { redirect_url: location.pathname },
+			});
+		}
+
 		// Client-only data (sessionStorage) is read inside the component.
 		// This route is safe to SSR, but will redirect client-side if empty.
 		return null;
@@ -211,7 +232,7 @@ function CheckoutPage() {
 													<div key={it.id} className="checkout-summary-item">
 														<div className="checkout-item-info">
 															<p>{it.productName}</p>
-													<small>{formatUSDMaybe(it.price)} each</small>
+															<small>{formatUSDMaybe(it.price)} each</small>
 														</div>
 														<fieldset className="product-quantity-stepper checkout-quantity-stepper">
 															<legend className="sr-only">
@@ -262,7 +283,7 @@ function CheckoutPage() {
 															</button>
 														</fieldset>
 														<p className="checkout-item-total">
-													{formatUSDMaybe(it.price * it.quantity) ?? "-"}
+															{formatUSDMaybe(it.price * it.quantity) ?? "-"}
 														</p>
 													</div>
 												))}

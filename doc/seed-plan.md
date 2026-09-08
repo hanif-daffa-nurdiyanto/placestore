@@ -226,7 +226,7 @@ skus: [
 Aturan data SKU:
 
 - Urutan `options` harus mengikuti urutan pada `variants` agar `skuKey` konsisten dengan halaman produk.
-- Harga menggunakan bilangan bulat rupiah dan tidak negatif.
+- Harga menggunakan dolar dan tidak negatif.
 - Stok menggunakan bilangan bulat dan tidak negatif.
 - Sekitar 10% kombinasi dapat diberi stok 0 untuk menguji status unavailable.
 - Setiap produk sebaiknya tetap mempunyai minimal satu SKU dengan stok lebih dari 0.
