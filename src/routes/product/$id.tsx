@@ -679,16 +679,7 @@ function ProductMeta(props: {
 					qty > selectedSku.stock && (
 						<p className="product-quantity-error">Max {selectedSku.stock}.</p>
 					)}
-				{selectionUnavailable && (
-					<div className="product-stock-alert" role="alert">
-						<AlertTriangle />
-						<span>
-							<strong>This combination is unavailable.</strong>
-							Choose another variant combination to continue. All options remain
-							selectable.
-						</span>
-					</div>
-				)}
+				
 			</div>
 
 			{variants.length > 0 && (
@@ -719,6 +710,17 @@ function ProductMeta(props: {
 					))}
 				</div>
 			)}
+
+			{selectionUnavailable && (
+					<div className="product-stock-alert w-fit!" role="alert">
+						<AlertTriangle />
+						<span>
+							<strong>This combination is empty.</strong>
+							Choose another variant combination to continue. All options remain
+							selectable.
+						</span>
+					</div>
+				)}
 		</div>
 	);
 }

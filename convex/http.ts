@@ -21,13 +21,31 @@ http.route({
 
       switch (result.type) {
         case "user.created":
-          await ctx.runMutation(internal.users.createUser, {
+        case "user.updated": {
+          const primaryEmail = result.data.email_addresses.find(
+            (email: { id: string }) =>
+              email.id === result.data.primary_email_address_id,
+          );
+          const name = [result.data.first_name, result.data.last_name]
+            .filter(
+              (part): part is string =>
+                typeof part === "string" && part.trim().length > 0,
+            )
+            .join(" ");
+
+          await ctx.runMutation(internal.users.syncUser, {
             externalId: result.data.id,
-            email: result.data.email_addresses[0]?.email_address,
-            name: `${result.data.first_name} ${result.data.last_name}`,
-            imageUrl: result.data.image_url,
+            email:
+              primaryEmail?.email_address ??
+              result.data.email_addresses[0]?.email_address,
+            name: name || undefined,
+            imageUrl:
+              typeof result.data.image_url === "string"
+                ? result.data.image_url
+                : undefined,
           });
           break;
+        }
       }
 
       return new Response(null, { status: 200 });

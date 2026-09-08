@@ -1,7 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
+import type { EmblaOptionsType } from "embla-carousel";
+import useEmblaCarousel from "embla-carousel-react";
 import { ArrowRight } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useDotButton } from "#/components/ui/embla/EmblaCarouselDotButtons";
 import { api } from "../../convex/_generated/api";
 import type { Id } from "../../convex/_generated/dataModel";
 import ProductCard from "../components/ui/ProductCard";
@@ -27,6 +30,92 @@ const SectionHeading = ({ children }: { children: React.ReactNode }) => (
 		</Link>
 	</div>
 );
+
+const BRAND_CAROUSEL_OPTIONS: EmblaOptionsType = {
+	align: "start",
+	loop: true,
+	slidesToScroll: 1,
+};
+
+const BrandCarousel = ({ products }: { products: PublicProduct[] }) => {
+	const [isHovering, setIsHovering] = useState(false);
+	const [isFocusWithin, setIsFocusWithin] = useState(false);
+	const [emblaRef, emblaApi] = useEmblaCarousel(BRAND_CAROUSEL_OPTIONS);
+	const { selectedIndex, scrollSnaps, onDotButtonClick } =
+		useDotButton(emblaApi);
+
+	useEffect(() => {
+		if (!emblaApi || products.length < 2 || isHovering || isFocusWithin) return;
+
+		const intervalId = window.setInterval(() => {
+			if (document.visibilityState === "hidden") return;
+
+			const api = emblaApi as unknown as Record<string, unknown>;
+			const goToNext = api.goToNext;
+			const scrollNext = api.scrollNext;
+
+			if (typeof goToNext === "function") (goToNext as () => void)();
+			else if (typeof scrollNext === "function") (scrollNext as () => void)();
+		}, 4000);
+
+		return () => window.clearInterval(intervalId);
+	}, [emblaApi, isFocusWithin, isHovering, products.length]);
+
+	return (
+		// biome-ignore lint/a11y/noStaticElementInteractions: Pointer and focus events pause automatic carousel rotation.
+		<div
+			className="brand-carousel"
+			onMouseEnter={() => setIsHovering(true)}
+			onMouseLeave={() => setIsHovering(false)}
+			onFocusCapture={() => setIsFocusWithin(true)}
+			onBlurCapture={(event) => {
+				const nextTarget = event.relatedTarget as Node | null;
+				if (nextTarget && event.currentTarget.contains(nextTarget)) return;
+				setIsFocusWithin(false);
+			}}
+		>
+			<div className="brand-carousel__viewport" ref={emblaRef}>
+				<div className="brand-carousel__container">
+					{products.map((product, index) => (
+						<div className="brand-carousel__slide" key={product._id}>
+							<Link
+								to="/product/$id"
+								params={{ id: product._id }}
+								className={`brand-card brand-card--${(index % 3) + 1}`}
+							>
+								<div className="brand-card__copy">
+									<small>{product.shop?.name ?? "PLACE STORE"}</small>
+									<strong>{product.name}</strong>
+									<span>Up to 50% OFF</span>
+								</div>
+								{product.imageUrl ? (
+									<img src={product.imageUrl} alt="" loading="lazy" />
+								) : (
+									<div className="brand-card__monogram">PS</div>
+								)}
+							</Link>
+						</div>
+					))}
+				</div>
+			</div>
+
+			{scrollSnaps.length > 1 && (
+				<nav className="brand-dots" aria-label="Top stores carousel pages">
+					{scrollSnaps.map((snap, index) => (
+						<button
+							type="button"
+							key={snap}
+							onClick={() => onDotButtonClick(index)}
+							className={index === selectedIndex ? "is-active" : ""}
+							aria-label={`Go to stores page ${index + 1}`}
+							aria-current={index === selectedIndex ? "true" : undefined}
+						/>
+					))}
+				</nav>
+			)}
+		</div>
+	);
+};
 
 const ProductsHome = ({
 	products,
@@ -68,7 +157,7 @@ const ProductsHome = ({
 		);
 	}
 
-	const brands = merged.slice(0, 3);
+	const brands = merged.slice(0, 9);
 	const essentials = merged.slice(0, 6);
 
 	return (
@@ -90,34 +179,7 @@ const ProductsHome = ({
 				<SectionHeading>
 					Top <span>Stores &amp; Brands</span>
 				</SectionHeading>
-				<div className="brand-grid">
-					{brands.map((product, index) => (
-						<Link
-							key={product._id}
-							to="/product/$id"
-							params={{ id: product._id }}
-							className={`brand-card brand-card--${index + 1}`}
-						>
-							<div className="brand-card__copy">
-								<small>{product.shop?.name ?? "PLACE STORE"}</small>
-								<strong>{product.name}</strong>
-								<span>Up to 50% OFF</span>
-							</div>
-							{product.imageUrl ? (
-								<img src={product.imageUrl} alt="" loading="lazy" />
-							) : (
-								<div className="brand-card__monogram">PS</div>
-							)}
-						</Link>
-					))}
-				</div>
-				<div className="brand-dots" aria-hidden="true">
-					<b />
-					<i />
-					<i />
-					<i />
-					<i />
-				</div>
+				<BrandCarousel products={brands} />
 			</section>
 
 			<section className="mega-section mega-container mega-essentials-section">
