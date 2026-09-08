@@ -15,6 +15,17 @@ type SearchParams = {
 	minRating?: string;
 };
 
+const EXPLORE_SKELETON_IDS = [
+	"product-1",
+	"product-2",
+	"product-3",
+	"product-4",
+	"product-5",
+	"product-6",
+	"product-7",
+	"product-8",
+] as const;
+
 export const Route = createFileRoute("/explore")({
 	head: () => ({
 		meta: [{ title: pageTitle("Explore") }],
@@ -23,8 +34,10 @@ export const Route = createFileRoute("/explore")({
 		const q = typeof search.q === "string" ? search.q : undefined;
 		const categoryId =
 			typeof search.categoryId === "string" ? search.categoryId : undefined;
-		const minPrice = typeof search.minPrice === "string" ? search.minPrice : undefined;
-		const maxPrice = typeof search.maxPrice === "string" ? search.maxPrice : undefined;
+		const minPrice =
+			typeof search.minPrice === "string" ? search.minPrice : undefined;
+		const maxPrice =
+			typeof search.maxPrice === "string" ? search.maxPrice : undefined;
 		const minRating =
 			typeof search.minRating === "string" ? search.minRating : undefined;
 		return { q, categoryId, minPrice, maxPrice, minRating };
@@ -37,6 +50,19 @@ function toNumberOrNull(input?: string) {
 	const n = Number(input);
 	if (!Number.isFinite(n)) return null;
 	return n;
+}
+
+function ExploreProductSkeleton() {
+	return (
+		<div className="deal-card" aria-hidden="true">
+			<div className="deal-card__image animate-pulse bg-slate-200" />
+			<div className="deal-card__body space-y-3">
+				<div className="h-3 w-4/5 animate-pulse rounded bg-slate-200" />
+				<div className="h-4 w-2/5 animate-pulse rounded bg-slate-200" />
+				<div className="h-2.5 w-3/5 animate-pulse rounded bg-slate-100" />
+			</div>
+		</div>
+	);
 }
 
 function ExplorePage() {
@@ -59,7 +85,7 @@ function ExplorePage() {
 
 	const summaries = useQuery(
 		api.reviews.getSummariesForProducts,
-		products && products.length ? { productIds: products.map((p) => p._id) } : "skip",
+		products?.length ? { productIds: products.map((p) => p._id) } : "skip",
 	);
 
 	const minRating = toNumberOrNull(search.minRating ?? undefined);
@@ -181,7 +207,10 @@ function ExplorePage() {
 						</div>
 
 						<div className="space-y-2">
-							<label className="text-sm font-medium" htmlFor="explore-minRating">
+							<label
+								className="text-sm font-medium"
+								htmlFor="explore-minRating"
+							>
 								Min rating
 							</label>
 							<select
@@ -211,7 +240,9 @@ function ExplorePage() {
 						<button
 							type="button"
 							className="w-full rounded-xl border px-3 py-2 text-sm hover:bg-slate-50"
-							onClick={() => navigate({ to: "/explore", search: {}, replace: true })}
+							onClick={() =>
+								navigate({ to: "/explore", search: {}, replace: true })
+							}
 						>
 							Clear filters
 						</button>
@@ -221,16 +252,29 @@ function ExplorePage() {
 						<div className="flex items-end justify-between gap-3">
 							<div>
 								<h1 className="text-2xl font-semibold">Explore</h1>
-								<p className="text-sm text-slate-500">
-									{merged === undefined
-										? "Loading…"
-										: `${merged.length} result(s)`}
-								</p>
+								{merged === undefined ? (
+									<div
+										className="mt-1 h-4 w-20 animate-pulse rounded bg-slate-200"
+										aria-hidden="true"
+									/>
+								) : (
+									<p className="text-sm text-slate-500">
+										{merged.length} result(s)
+									</p>
+								)}
 							</div>
 						</div>
 
 						{merged === undefined ? (
-							<p className="text-sm text-slate-500">Loading…</p>
+							<div
+								className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+								aria-live="polite"
+							>
+								{EXPLORE_SKELETON_IDS.map((id) => (
+									<ExploreProductSkeleton key={id} />
+								))}
+								<span className="sr-only">Loading products…</span>
+							</div>
 						) : merged.length === 0 ? (
 							<div className="rounded-2xl border bg-white p-6 text-sm text-slate-600">
 								No products found. Try adjusting your filters.
@@ -248,4 +292,3 @@ function ExplorePage() {
 		</div>
 	);
 }
-
